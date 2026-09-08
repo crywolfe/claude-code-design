@@ -1,12 +1,12 @@
 ---
 name: doctor
-description: First-run setup + health check. Verifies Chrome DevTools MCP, installs optional deps (monolith, pptxgenjs, puppeteer), creates working dirs, runs smoke test. Use on fresh clone or when things feel broken.
-allowed-tools: Read Write Bash(claude:*) Bash(which:*) Bash(brew:*) Bash(npm:*) Bash(node:*) Bash(mkdir:*) Bash(ls:*) Bash(test:*) mcp__chrome-devtools__*
+description: First-run health check. Verifies Chrome DevTools MCP and optional deps (monolith, pptxgenjs, puppeteer), prints the install commands for the user to run, creates working dirs, runs smoke test. Use on fresh clone or when things feel broken.
+allowed-tools: Read Write Bash(claude mcp list) Bash(which:*) Bash(mkdir -p artifacts:*) Bash(ls:*) Bash(test:*) mcp__chrome-devtools__list_pages mcp__chrome-devtools__take_screenshot
 ---
 
 # Doctor
 
-Cold-start health check + optional auto-install. Safe to run multiple times.
+Cold-start health check. Never installs anything itself — it prints the commands for the user to run. Safe to run multiple times.
 
 ## Phase 1 — Inventory
 
@@ -16,10 +16,11 @@ Run in parallel where possible:
 2. `Bash(which monolith)` — existence check
 3. `Bash(which node)` — required
 4. `Bash(which gh)` — for `/ingest-github`
-5. `Bash(test -f package.json && echo yes || echo no)`
-6. `Bash(test -d starters && echo yes || echo no)` — expect yes
-7. `Bash(test -d artifacts && echo yes || echo no)`
-8. `Bash(test -d .claude/skills && echo yes || echo no)` — expect yes
+5. `Bash(test -f package.json)` — exit 0 = exists
+6. `Bash(test -d starters)` — expect exit 0
+7. `Bash(test -d artifacts)`
+8. `Bash(test -d .claude/skills)` — expect exit 0
+9. `Bash(test -d node_modules/puppeteer)` and `Bash(test -d node_modules/pptxgenjs)`
 
 ## Phase 2 — Report
 
@@ -37,19 +38,21 @@ artifacts/ dir:      will create
 FIGMA_TOKEN env:     set / not set (only needed for /ingest-figma)
 ```
 
-## Phase 3 — Repair (with user consent)
+## Phase 3 — Repair (user runs the commands)
 
-For each missing item, ask the user with `AskUserQuestion`: "Install X now?" (yes/skip/all).
+Do not install anything. Print the exact commands for the user to run in a separate shell:
 
-Repair commands (only on yes):
-- **Chrome DevTools MCP:** `Bash(claude mcp add chrome-devtools -s user -- npx chrome-devtools-mcp@latest)` — note: requires Claude Code restart to take effect
-- **monolith:** `Bash(brew install monolith)` (macOS) or tell user for linux
-- **pptxgenjs + puppeteer:**
-  ```
-  Bash(test -f package.json || npm init -y)
-  Bash(npm install -D pptxgenjs puppeteer)
-  ```
-- **artifacts/ dir:** `Bash(mkdir -p artifacts assets/thumbs test)`
+```
+# Chrome DevTools MCP — already declared in .mcp.json (pinned, --isolated); approve it when Claude Code asks,
+# or register it manually with the same pinned, isolated form:
+claude mcp add chrome-devtools -s project -- npx chrome-devtools-mcp@1.9.0 --isolated
+brew install monolith
+npm install -D pptxgenjs@4.0.1 puppeteer@24.41.0
+```
+
+Then ask them to restart Claude Code and re-run `/doctor`.
+
+The only repair this skill performs itself: `Bash(mkdir -p artifacts assets/thumbs test)`.
 
 ## Phase 4 — Smoke test
 

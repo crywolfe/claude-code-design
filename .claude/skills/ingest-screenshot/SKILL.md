@@ -2,7 +2,7 @@
 name: ingest-screenshot
 description: Analyze an uploaded image (screenshot of a design, website, app) and extract design tokens to use as a starting point. Use when user pastes or attaches an image and says "recreate this", "match this image", "use this style".
 argument-hint: <image-path>
-allowed-tools: Read Write Bash(mkdir:*) Bash(realpath:*) Bash(file:*)
+allowed-tools: Read Write Bash(mkdir -p artifacts:*) Bash(realpath:*) Bash(file:*)
 ---
 
 # Ingest Screenshot

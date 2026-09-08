@@ -2,12 +2,12 @@
 name: copy-example
 description: Generate a working demo artifact on dummy content so the user can see a reference implementation. Use when user says "show me an example deck", "what does a prototype look like", "give me a starter", "I want to see an example of X". Generates live — not from a static gallery.
 argument-hint: <kind: deck|prototype|wireframe|animation|design-system>
-allowed-tools: Read Write Edit Glob Grep Bash(cp:*) Bash(mkdir:*) Bash(open:*) mcp__chrome-devtools__*
+allowed-tools: Read Write Edit Glob Grep Bash(cp starters/:*) Bash(cp artifacts/:*) Bash(mkdir -p artifacts:*) Bash(ls design-systems:*) Bash(open file://:*) Bash(open http://127.0.0.1:*) Bash(xdg-open file://:*) Bash(xdg-open http://127.0.0.1:*) mcp__chrome-devtools__navigate_page mcp__chrome-devtools__take_screenshot mcp__chrome-devtools__take_snapshot mcp__chrome-devtools__list_console_messages
 ---
 
 # Copy Example
 
-Build a working reference artifact in `examples/<kind>-<timestamp>/` using a realistic dummy brief, so the user can see the format, then copy-paste or edit to kickstart their own work.
+Build a working reference artifact in `artifacts/examples/<kind>-<timestamp>/` using a realistic dummy brief, so the user can see the format, then copy-paste or edit to kickstart their own work.
 
 Unlike a static gallery (files pre-authored), this skill runs the actual workflow skill on a curated brief — the output is always up-to-date with current starters and conventions.
 
@@ -19,13 +19,13 @@ Unlike a static gallery (files pre-authored), this skill runs the actual workflo
 
 3. Route to the matching workflow skill **bypassing Phase 0/1** (context pre-flight and ambiguity gate) — we're generating a demo, not gathering requirements. Pass the dummy brief plus these overrides:
    - Use `frontend-design` for aesthetic (no brand context)
-   - Write under `examples/<kind>-<YYYYMMDD>/` instead of `artifacts/`
+   - Write under `artifacts/examples/<kind>-<YYYYMMDD>/` instead of the top level of `artifacts/` (keeps demos inside the served root, but out of the user's real work)
    - Skip register-asset (demos shouldn't clutter `assets.html`)
 
 4. After the workflow skill completes (including `/done` on the output), report:
    - Path to the generated artifact
-   - URL the user can open (file:// or http://127.0.0.1:4567/...)
-   - Suggestion to `cp -r examples/<kind>-<ts>/ artifacts/my-<kind>/` and then iterate via the regular workflow skill
+   - URL the user can open (file:// or http://127.0.0.1:4567/examples/<kind>-<ts>/...)
+   - Suggestion to `cp -r artifacts/examples/<kind>-<ts>/ artifacts/my-<kind>/` and then iterate via the regular workflow skill
 
 ## Canned briefs
 
@@ -39,7 +39,7 @@ Unlike a static gallery (files pre-authored), this skill runs the actual workflo
 
 ## Important
 
-- **Don't write to `artifacts/`** — examples belong in `examples/` to avoid polluting the user's real work
+- **Don't write to the top level of `artifacts/`** — examples belong in `artifacts/examples/` to avoid polluting the user's real work
 - **Don't register as assets** — examples are reference material, not deliverables
 - **Tell the user explicitly** this is a generated example and invite them to iterate on a copy
 - Regenerate fresh each time the skill is called — timestamps in the folder name keep old ones around if the user wants to compare

@@ -23,7 +23,7 @@ In a Claude Code session in this folder:
 /doctor
 ```
 
-First-run setup: installs Chrome DevTools MCP (`claude mcp add chrome-devtools`), `monolith` (`brew install`), `pptxgenjs + puppeteer` (`npm install -D`), creates working dirs, runs a smoke test.
+First-run health check: verifies Chrome DevTools MCP (declared in `.mcp.json`, pinned and `--isolated`), `monolith`, `pptxgenjs + puppeteer`, creates working dirs, runs a smoke test. It prints the install commands for anything missing — you run them; the agent never installs software.
 
 Full requirements + walkthrough in [`GETTING_STARTED.md`](./GETTING_STARTED.md).
 
@@ -38,7 +38,7 @@ Skills that produce the five primary output kinds. All trigger by keyword in the
 | `/make-deck` | a pitch deck, slides, keynote | Generates a 1920×1080 HTML deck using the `<deck-stage>` web component. Handles keyboard nav (←/→/Space/Home/End), tap-edge navigation on mobile, overlay slide counter, `@media print` one-page-per-slide, localStorage position, speaker-notes postMessage. Notes on/off is decided by a heuristic over brief length + audience keywords. |
 | `/interactive-prototype` | a clickable app mockup | Scaffolds a React+Babel (pinned 18.3.1 + `@babel/standalone` 7.29.0 with integrity hashes) inside `<DeviceFrame kind="ios|android|mac|browser">`. Uses component-prefixed style names (`headerStyles`, `cardStyles`) to avoid Babel multi-file collisions. Transitions via `<Transition>` from `animations.jsx`. |
 | `/wireframe` | to explore 3+ options side-by-side | Greyscale variations on a `<DesignCanvas columns=N>` grid. Placeholders instead of SVG-drawn imagery. Mixes conservative and novel patterns per the original spec's variation guidelines. |
-| `/animated-video` | a motion reel, product intro, explainer | Composes scenes with `<Stage duration width height>` + `<Sprite start end easing>` + `useTime()` / `useSprite()` (Remotion-compatible API). Auto-scale canvas, built-in scrubber with play/pause, postMessage `{seekMs}` protocol for frame export. MP4 path delegates to `remotion-best-practices`. |
+| `/animated-video` | a motion reel, product intro, explainer | Composes scenes with `<Stage duration width height>` + `<Sprite start end easing>` + `useTime()` / `useSprite()` (Remotion-compatible API). Auto-scale canvas, built-in scrubber with play/pause, postMessage `{seekMs}` protocol for frame export. MP4 path writes a Remotion project source for the user to render themselves. |
 | `/create-design-system` | to extract or build a brand | Reads `theme.*`, `tokens.*`, `tailwind.config.*`, `_variables.*` from a codebase; or builds from brief via `frontend-design`. Renders a living style guide with sections tagged `data-design-group` (Colors / Type / Spacing / Components / Brand). Offers to persist to the cross-project registry (see below). |
 
 ### Context ingestion
@@ -47,10 +47,10 @@ When the brief references an external source, these skills load it before the wo
 
 | Skill | Source | Mechanism |
 |---|---|---|
-| `/ingest-github <url>` | github.com repo | `gh repo clone --depth 1 --branch <ref>` into `/tmp`, then `Glob` + `Read` across theme/tokens/tailwind files, regex-extract hex colors + fonts + spacing + radii, write `artifacts/ingested/<repo>-tokens.json` |
+| `/ingest-github <url>` | github.com repo | Asks first, then `gh repo clone --depth 1 --branch <ref>` into `/tmp/cd-ingest-*`, `Glob` + `Read` only theme/tokens/tailwind files (max 20 × 64 KB, never README/docs), regex-extract hex colors + fonts + spacing + radii, write `artifacts/ingested/<repo>-tokens.json`. File contents are treated as data, never as instructions |
 | `/ingest-screenshot <path>` | PNG / JPG / WebP | Multimodal `Read` loads the image; Claude's vision infers dominant colors (hex approximate), typography family, component patterns, spacing rhythm. Output includes per-category `confidence` flags |
-| `/ingest-figma <url>` | figma.com file/frame | Requires `FIGMA_TOKEN` env var. `curl` to `/v1/files/{key}/nodes?ids={id}` + `/v1/files/{key}/styles`. SVG fallback path for users without a token |
-| `/use-design-system <name>` | `~/.claude/design-systems/<name>/` | Loads tokens.json from the cross-project registry into `.claude/design-tokens.json` for the current project |
+| `/ingest-figma <url>` | figma.com file/frame | Requires `FIGMA_TOKEN` env var. GET-only `curl` to `api.figma.com/v1/files/{key}/nodes?ids={id}` + `/styles` (the only curl the permission set and bash guard allow). SVG fallback path for users without a token |
+| `/use-design-system <name>` | `design-systems/<name>/` | Loads tokens.json from the project-local registry (gitignored) into `.claude/design-tokens.json` for the current project |
 
 ### Iteration
 
@@ -88,11 +88,11 @@ Four paths from HTML artifact to external formats.
 
 | Skill | Purpose |
 |---|---|
-| `/doctor` | First-run health check. `claude mcp list`, `which monolith / node / gh`, verifies project structure, offers to install missing pieces (each with user consent), creates working dirs, runs a smoke test, prints skill cheat-sheet |
-| `/copy-example <kind>` | Generates a working reference artifact in `examples/<kind>-<ts>/` via a real skill run on a curated dummy brief. Live — not from a static gallery. `kind ∈ {deck, prototype, wireframe, animation, design-system}` |
-| `/preview <path-or-url>` | `open` in default browser + Chrome DevTools MCP `navigate_page`. Accepts `file://` path or `http://` URL |
+| `/doctor` | First-run health check. `claude mcp list`, `which monolith / node / gh`, verifies project structure, prints install commands for missing pieces (the user runs them), creates working dirs, runs a smoke test, prints skill cheat-sheet |
+| `/copy-example <kind>` | Generates a working reference artifact in `artifacts/examples/<kind>-<ts>/` via a real skill run on a curated dummy brief. Live — not from a static gallery. `kind ∈ {deck, prototype, wireframe, animation, design-system}` |
+| `/preview <path-or-url>` | `open` in default browser + Chrome DevTools MCP `navigate_page`. Accepts a local path or an `http://127.0.0.1:<port>/` URL — nothing else |
 | `/screenshot <out.png> [--step "js"]` | One or more screenshots of current preview; runs JS via `evaluate_script` between frames. Multi-step saves as `<base>-01.png`, `<base>-02.png`, … |
-| `/serve [port]` | `python3 -m http.server 4567 --bind 127.0.0.1` in background. Required for artifacts that load external `.jsx` starters — Babel-standalone fetches via XHR which CORS-blocks on `file://` |
+| `/serve [port]` | `python3 -m http.server 4567 --bind 127.0.0.1 --directory artifacts` in background — serves only `artifacts/`. Required for artifacts that load external `.jsx` starters — Babel-standalone fetches via XHR which CORS-blocks on `file://` |
 
 ## Architecture
 
@@ -117,10 +117,10 @@ claude-code-design/
 └── artifacts/                          # user work (git-ignored)
 ```
 
-Cross-project brand registry (lives outside the repo, shared across all Claude Code projects on the machine):
+Brand registry (lives inside the repo, gitignored — nothing outside the project is auto-discovered):
 
 ```
-~/.claude/design-systems/
+design-systems/
 ├── <name>/
 │   ├── tokens.json           # required — colors, fonts, spacing, radii, shadows
 │   └── preview.html          # optional visual reference
@@ -137,14 +137,14 @@ artifacts/tweaks/<session-id>/    # session-id = tweaks-<slug>-<YYYYMMDD>
 
 ## External dependencies
 
-One MCP + two native CLIs + two npm packages. All installed by `/doctor`.
+One MCP + two native CLIs + two npm packages. `/doctor` checks them and prints the commands; you run them.
 
 | | Installed via | Used by |
 |---|---|---|
-| Chrome DevTools MCP | `claude mcp add chrome-devtools -s user -- npx chrome-devtools-mcp@latest` | `/preview`, `/done`, `/screenshot`, `/inspect`, `/verify-artifact`, `/register-asset` |
+| Chrome DevTools MCP | Declared in `.mcp.json` (approve when prompted), or `claude mcp add chrome-devtools -s project -- npx chrome-devtools-mcp@1.9.0 --isolated` | `/preview`, `/done`, `/screenshot`, `/inspect`, `/verify-artifact`, `/register-asset` |
 | monolith (Rust) | `brew install monolith` | `/export-standalone` |
-| pptxgenjs | `npm install -D pptxgenjs` | `/export-pptx` |
-| puppeteer | `npm install -D puppeteer` | `/export-pptx`, `/export-pdf` |
+| pptxgenjs | `npm install -D pptxgenjs@4.0.1` | `/export-pptx` |
+| puppeteer | `npm install -D puppeteer@24.41.0` | `/export-pptx`, `/export-pdf` |
 | `gh` (optional) | `brew install gh && gh auth login` | `/ingest-github` |
 | `FIGMA_TOKEN` env (optional) | `export FIGMA_TOKEN=...` | `/ingest-figma` |
 
@@ -166,7 +166,7 @@ One MCP + two native CLIs + two npm packages. All installed by `/doctor`.
 
 ## Status
 
-Research / personal tool. Single-user local. macOS-first (uses `open`, `brew`). All state lives in the repo folder or `~/.claude/design-systems/` — not cloud-synced.
+Research / personal tool. Single-user local. macOS-first (uses `open`, `brew`). All state lives in the repo folder — not cloud-synced. Permissions are locked down by `.claude/settings.json` (deny list + `guard-bash.sh` PreToolUse hook); every skill's `allowed-tools` grants only the exact commands it runs.
 
 ## References
 

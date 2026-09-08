@@ -2,7 +2,7 @@
 name: apply-tweaks
 description: Apply buffered tweaks from pending.yaml to the source HTML file. Invoked when user says "save tweaks", "apply tweaks", "persist panel changes", or runs /apply-tweaks.
 argument-hint: <html-path>
-allowed-tools: Read Write Edit Bash(ls:*) Bash(cat:*) Bash(mkdir:*) Bash(date:*) Bash(mv:*)
+allowed-tools: Read Write Edit Bash(ls artifacts/:*) Bash(cat artifacts/:*) Bash(mkdir -p artifacts:*) Bash(date:*) Bash(mv artifacts/:*)
 ---
 
 # Apply Tweaks
@@ -43,9 +43,9 @@ If skipping date match (e.g. resume from yesterday), `Bash(ls artifacts/tweaks/)
 
 6. **Append to log:**
    ```
-   ts=$(date -u +%Y%m%dT%H%M%SZ)
-   Write artifacts/tweaks/<session-id>/applied/$ts.yaml:
-     applied_at: $ts
+   Bash(date -u +%Y%m%dT%H%M%SZ)   → use the printed value as <ts> (no shell substitution)
+   Write artifacts/tweaks/<session-id>/applied/<ts>.yaml:
+     applied_at: <ts>
      changes:
        <copy of pending.yaml>
    ```

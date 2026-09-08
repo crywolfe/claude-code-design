@@ -17,7 +17,9 @@
 //
 // Popmotion fallback: for spring physics, gestures, or keyframe math that this
 // engine can't express, add
-//   <script src="https://unpkg.com/popmotion@11.0.5/dist/popmotion.min.js"></script>
+//   <script src="https://unpkg.com/popmotion@11.0.5/dist/popmotion.min.js"
+//           integrity="sha384-wJDuGwfWl5OHxo9ZZf7N9GhKJBTIhS6a0OEIFmKlG3yHZql/tnGuymMcVYAm/FDI"
+//           crossorigin="anonymous"></script>
 // and use window.popmotion directly.
 
 (() => {
@@ -182,10 +184,13 @@
     }, [t, storageKey]);
 
     // postMessage seek protocol — lets external tools (export scripts, Stage-host iframes) seek
-    //   window.postMessage({ seekMs: 1500 }, '*')
-    //   window.postMessage({ playing: false }, '*')
+    //   window.postMessage({ seekMs: 1500 }, window.location.origin === 'null' ? '*' : window.location.origin)
+    //   window.postMessage({ playing: false }, window.location.origin === 'null' ? '*' : window.location.origin)
+    // Messages from other origins are ignored.
     useEffect(() => {
       const onMsg = (e) => {
+        // Same-origin only. 'null' is the origin of file:// pages.
+        if (e.origin !== window.location.origin && e.origin !== 'null') return;
         if (!e.data || typeof e.data !== 'object') return;
         if (typeof e.data.seekMs === 'number') {
           setT(Math.max(0, Math.min(duration, e.data.seekMs)));

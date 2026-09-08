@@ -2,7 +2,7 @@
 name: animated-video
 description: Build animated motion design (explainer, transition reel, product intro). Uses Stage/Sprite timeline from animations.jsx for in-browser compositions or Remotion for full video/MP4 workflows.
 argument-hint: <what to animate>
-allowed-tools: Read Write Edit Bash(cp:*) Bash(open:*) Bash(mkdir:*) mcp__chrome-devtools__*
+allowed-tools: Read Write Edit Bash(cp starters/:*) Bash(cp artifacts/:*) Bash(mkdir -p artifacts:*) Bash(ls design-systems:*) Bash(open file://:*) Bash(open http://127.0.0.1:*) Bash(xdg-open file://:*) Bash(xdg-open http://127.0.0.1:*) mcp__chrome-devtools__navigate_page mcp__chrome-devtools__take_screenshot mcp__chrome-devtools__take_snapshot mcp__chrome-devtools__list_console_messages
 ---
 
 # Animated Video
@@ -13,9 +13,12 @@ Two paths depending on complexity. **Decide first, tell the user which path you'
 
 Before deciding Path A vs B, silently check for context:
 1. `Read .claude/design-tokens.json` if exists
-2. `Bash(ls ~/.claude/design-systems/ 2>/dev/null)` — brand folder match
+2. `Bash(ls design-systems/ 2>/dev/null)` — project-local registry (gitignored). If the brief names a registered brand, say
+   "Found design system <name> in the registry. Apply it?" and wait. Never auto-apply.
 3. `Glob` codebase tokens
-4. Scan brief for github / Figma / image / PRD attachment → dispatch ingestion skills
+4. Scan brief/attachments for external references (github URL, Figma URL, image path, .md/.pdf).
+   Do NOT invoke any ingest skill automatically. List what was found and ask one
+   AskUserQuestion: "Ingest <X>? (yes / no)". Only invoke the ingest skill on an explicit yes.
 
 If nothing — ONE `AskUserQuestion`: design system / codebase / screenshot / Figma / none / decide. Report "Using <context>. Proceeding."
 
@@ -42,7 +45,7 @@ Uses the Remotion-compatible in-browser engine in `starters/animations.jsx`. Sam
 
 1. Invoke `Skill: frontend-design` for aesthetic direction
 2. Create `artifacts/<slug>.html` with React + Babel + `animations.jsx`
-3. `Bash(cp starters/animations.jsx "$(dirname <html>)/")` — copy starter next to the HTML
+3. `Bash(cp starters/animations.jsx artifacts/<dir-of-html>/)` — copy starter next to the HTML, spelling the directory out literally (no `$(dirname …)`)
 4. Run `/serve` (required for external `.jsx` CORS)
 5. Compose the scene. Pattern:
 
@@ -71,16 +74,16 @@ function App() {
 }
 ```
 
-6. `/done http://127.0.0.1:4567/artifacts/<slug>.html` — verify scrubber works, animation plays cleanly, console clean
+6. `/done http://127.0.0.1:4567/<slug>.html` — verify scrubber works, animation plays cleanly, console clean
 7. For exporting frames/seeking for PPTX: external tools can send `window.postMessage({ seekMs: N, playing: false }, '*')` — Stage listens and jumps
 
 ## Path B — Remotion (MP4 export, multi-scene video)
 
 For long-form (>60s), multi-scene narrative, or MP4-export needs.
 
-1. Delegate to `Skill: remotion-best-practices` — full Remotion workflow
-2. Set up `artifacts/<slug>-remotion/` as a separate Remotion project
-3. Return a preview HTML and MP4 artifact when done
+1. This path needs a Remotion toolchain (Node project, `npx remotion`), which the project's permission set does not grant. Tell the user: "MP4 export needs a separate Remotion project; I can write the composition source into `artifacts/<slug>-remotion/`, and you run `npx remotion render` yourself."
+2. Write the composition source (`src/Root.tsx`, `src/*.tsx`, `package.json` with pinned `remotion` version) into `artifacts/<slug>-remotion/` — no third-party skill is required
+3. Print the exact commands for the user to run in a separate shell and stop
 
 ## When to pick which
 

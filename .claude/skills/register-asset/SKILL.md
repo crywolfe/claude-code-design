@@ -2,7 +2,7 @@
 name: register-asset
 description: Register a design artifact in design-assets.json, capture a thumbnail, and regenerate assets.html overview grid. Use when an artifact is ready for review, or user says "add to overview", "register", "track this".
 argument-hint: <html-path> [--asset "Name"] [--group Type|Colors|Spacing|Components|Brand] [--subtitle "..."] [--status needs-review|approved|changes-requested]
-allowed-tools: Read Write Edit Bash(mkdir:*) Bash(node:*) Bash(realpath:*) mcp__chrome-devtools__*
+allowed-tools: Read Write Edit Bash(mkdir -p assets:*) Bash(cp .claude/last-preview.png assets/thumbs/:*) Bash(node scripts/make-assets-index.mjs:*) Bash(realpath:*) mcp__chrome-devtools__navigate_page mcp__chrome-devtools__take_screenshot
 ---
 
 # Register Asset
@@ -55,7 +55,7 @@ From `$ARGUMENTS`:
 
 5. **Regenerate `assets.html`:**
    - `Bash(node scripts/make-assets-index.mjs)` — see script below
-   - If user didn't run `/doctor` and node is missing, fall back to inline generation via `Write` tool with HTML template
+   - If node is missing, fall back to inline generation via `Write` tool with HTML template. Never run `node` with anything other than that script.
 
 6. **Report:** "Registered `<asset>` in `<group>`. View at `assets.html`."
 

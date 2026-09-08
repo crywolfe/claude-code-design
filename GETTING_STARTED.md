@@ -18,7 +18,7 @@ Optional depending on which skills you use:
 | | Needed for |
 |---|---|
 | `FIGMA_TOKEN` env var | `/ingest-figma` — [create a personal access token](https://www.figma.com/developers/api#access-tokens) and `export FIGMA_TOKEN=...` in your shell profile |
-| A design system in `~/.claude/design-systems/<name>/` | Cross-project brand reuse via `/use-design-system` |
+| A design system in `design-systems/<name>/` (gitignored, inside the repo) | Brand reuse via `/use-design-system` |
 
 ## Install
 
@@ -38,7 +38,7 @@ In the first turn, run:
 `/doctor` performs:
 
 1. Inventory: `claude mcp list` → checks Chrome DevTools MCP; `which monolith node gh`; tests project structure
-2. Repair: offers to install missing pieces (`claude mcp add chrome-devtools …`, `brew install monolith`, `npm install -D pptxgenjs puppeteer`) — **each install asks for permission**
+2. Repair: prints the install commands for missing pieces (`claude mcp add chrome-devtools -s project -- npx chrome-devtools-mcp@1.9.0 --isolated`, `brew install monolith`, `npm install -D pptxgenjs@4.0.1 puppeteer@24.41.0`) — **you run them in a separate shell**; the agent never installs software
 3. Smoke test: creates a tiny `test/smoke-deck.html`, runs `/done` on it, reports pass/fail
 4. Prints a skill cheat-sheet
 
@@ -46,7 +46,7 @@ If something in step 1 is already installed, `/doctor` skips the corresponding i
 
 ### Claude Code restart after MCP install
 
-`claude mcp add chrome-devtools …` requires a Claude Code restart before the new MCP tools appear. If `/doctor` asks you to restart — do it, then run `/doctor` again so it can proceed with the remaining steps.
+The MCP is declared in `.mcp.json` (pinned version, `--isolated` so it runs a throwaway Chrome profile with none of your real cookies); Claude Code asks you to approve it on first launch. A manual `claude mcp add chrome-devtools …` requires a Claude Code restart before the new MCP tools appear. If `/doctor` asks you to restart — do it, then run `/doctor` again so it can proceed with the remaining steps.
 
 ## First artifact — end-to-end walkthrough
 
@@ -58,9 +58,9 @@ make a 3-slide deck about the history of butter
 
 Expected flow:
 
-1. Claude loads `superpowers:brainstorming` for creative pre-work
-2. `make-deck` skill fires on trigger ("deck", "slides")
-3. Phase 0: scans project for design tokens / attached files → reports "No context — using frontend-design for aesthetic direction"
+1. `make-deck` skill fires on trigger ("deck", "slides")
+2. Phase 0: scans project for design tokens / attached files → reports "No context — using frontend-design for aesthetic direction". If the brief contained a GitHub/Figma URL or an image, Claude lists it and **asks** before ingesting — it never clones or fetches on its own
+3. (nothing is fetched or installed without you saying yes)
 4. Phase 1: ambiguity gate — brief has length (3 slides) but no audience/style → one or two quick `AskUserQuestion`s
 5. Phase 1.5: speaker-notes heuristic — "history of butter / 3 slides" is short → decides **notes: off**
 6. Writes `artifacts/history-of-butter.html`, copies `starters/deck_stage.js` alongside
@@ -100,16 +100,16 @@ claude-code-design/
 | See the full skill + command map | [`README.md`](./README.md) |
 | Understand what Claude will do on my brief | [`CLAUDE.md`](./CLAUDE.md) |
 | Understand the taste + anti-pattern rules | [`CLAUDE.md`](./CLAUDE.md) "Anti-patterns" and "Scales" sections |
-| Build a reusable brand for cross-project use | Run `/create-design-system` — it offers to save to `~/.claude/design-systems/<name>/` at the end |
+| Build a reusable brand | Run `/create-design-system` — it offers to save to `design-systems/<name>/` (gitignored) at the end |
 | Copy a working reference | `/copy-example deck` (or `prototype`, `wireframe`, `animation`, `design-system`) |
 
 ## Common issues
 
 **`/done` reports a broken preview but the HTML loads when I `open` it manually.**
-Often CORS on `file://` for external `.jsx` starters. Run `/serve` to start `http://127.0.0.1:4567`, then `/done http://127.0.0.1:4567/artifacts/<name>.html`. The `interactive-prototype` / `wireframe` / `animated-video` skills already handle this — but if you wrote HTML manually, switch to the http URL.
+Often CORS on `file://` for external `.jsx` starters. Run `/serve` to start `http://127.0.0.1:4567` (root: `artifacts/`), then `/done http://127.0.0.1:4567/<name>.html`. The `interactive-prototype` / `wireframe` / `animated-video` skills already handle this — but if you wrote HTML manually, switch to the http URL.
 
 **Chrome DevTools MCP won't connect after install.**
-Requires a Claude Code restart after `claude mcp add`. If still failing, fallback: `claude mcp add playwright -s user -- npx @playwright/mcp@latest` (ships its own Chromium).
+Requires a Claude Code restart after `claude mcp add`. If still failing, fallback: `claude mcp add playwright -s project -- npx @playwright/mcp@<pinned version> --isolated` (ships its own Chromium; pin the version, never `@latest`).
 
 **`/export-pptx` hangs on fonts.**
 The script has a 30s timeout on `waitForFunction` and awaits `document.fonts.ready`. If your deck uses custom fonts from a remote CDN, preload via `<link rel="preload" as="font">` in the artifact head, or convert to base64 data URLs.
@@ -124,8 +124,8 @@ File System Access API requires a secure context (http/https). Run `/serve` firs
 
 No state outside the repo folder, except:
 
-- Chrome DevTools MCP registration in `~/.claude.json` — remove with `claude mcp remove chrome-devtools`
-- Design system registry at `~/.claude/design-systems/` — if you saved any brand here, remove with `rm -rf ~/.claude/design-systems/<name>/`
+- Chrome DevTools MCP registration lives in the repo's `.mcp.json` (project scope) — nothing is written to `~/.claude.json` unless you registered it with `-s user` yourself
+- Design system registry at `design-systems/` inside the repo — deleted with the clone
 - `monolith` was installed globally — remove with `brew uninstall monolith` if you don't need it elsewhere
 - `pptxgenjs` / `puppeteer` are local (`node_modules/` in this repo) — just delete the repo clone
 

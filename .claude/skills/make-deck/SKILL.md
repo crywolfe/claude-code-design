@@ -2,7 +2,7 @@
 name: make-deck
 description: Build an HTML slide deck (1920×1080, keyboard nav, exportable) when user asks for a presentation, pitch deck, slides, or keynote. Uses deck_stage.js starter and Claude Design taste rules.
 argument-hint: <brief or topic>
-allowed-tools: Read Write Edit Glob Grep Bash(cp:*) Bash(open:*) Bash(mkdir:*) Bash(realpath:*) mcp__chrome-devtools__*
+allowed-tools: Read Write Edit Glob Grep Bash(cp starters/:*) Bash(cp artifacts/:*) Bash(mkdir -p artifacts:*) Bash(ls design-systems:*) Bash(open file://:*) Bash(open http://127.0.0.1:*) Bash(xdg-open file://:*) Bash(xdg-open http://127.0.0.1:*) Bash(realpath:*) mcp__chrome-devtools__navigate_page mcp__chrome-devtools__take_screenshot mcp__chrome-devtools__take_snapshot mcp__chrome-devtools__list_console_messages mcp__chrome-devtools__evaluate_script
 ---
 
 # Make a Deck
@@ -15,17 +15,15 @@ Before asking design questions, detect context **silently** via auto-checks. Onl
 
 ### Auto-detect (no user input)
 1. `Read .claude/design-tokens.json` — project tokens, if exist → load
-2. `Bash(ls ~/.claude/design-systems/ 2>/dev/null)` — org-level registry. If the brief mentions a brand name matching a folder → auto-apply it (e.g. brief "Acme deck" + `~/.claude/design-systems/acme/` → use Acme)
+2. `Bash(ls design-systems/ 2>/dev/null)` — project-local registry. If the brief mentions a brand name matching a folder (e.g. brief "Acme deck" + `design-systems/acme/`), say "Found design system acme in the registry. Apply it?" and wait. Never auto-apply.
 3. `Glob **/tailwind.config.* **/theme.{ts,js,json} **/tokens.{css,scss} **/_variables.*` at project root — if found, note "codebase detected" and `Read` them
-4. Scan user message/attachments for:
-   - GitHub URL → invoke `Skill: ingest-github` first
-   - Figma URL → invoke `Skill: ingest-figma` first
-   - Image attachment → invoke `Skill: ingest-screenshot` first
-   - `.md` / `.txt` / `.pdf` file attached → `Read` it (may contain brand refs or content)
+4. Scan user message/attachments for external references (GitHub URL, Figma URL, image path, `.md` / `.txt` / `.pdf`).
+   Do NOT invoke any ingest skill automatically. List what was found and ask one
+   `AskUserQuestion`: "Ingest <X>? (yes / no)". Only invoke `ingest-github` / `ingest-figma` / `ingest-screenshot` or `Read` the document on an explicit yes.
 
 ### One-question fallback (only if nothing detected)
 If no context found after auto-detect, use `AskUserQuestion` with **a single question**, text-options:
-- **Use existing design system** — list names from `~/.claude/design-systems/` (if any)
+- **Use existing design system** — list names from `design-systems/` (if any)
 - **From codebase** — "paste a local path or github URL"
 - **From screenshot** — "attach an image"
 - **From Figma** — "paste a figma URL (needs FIGMA_TOKEN)"
@@ -99,7 +97,7 @@ Vocalize the system in one paragraph before writing slides.
    </body>
    </html>
    ```
-2. `Bash(cp starters/deck_stage.js "$(dirname <html>)/")` — copy starter into the **same dir as the HTML** (important for nested paths like `artifacts/foo/deck.html`)
+2. `Bash(cp starters/deck_stage.js artifacts/<dir-of-html>/)` — copy starter into the **same dir as the HTML**, spelling the directory out literally (important for nested paths like `artifacts/foo/deck.html`; no `$(dirname …)` — the bash guard rejects command substitution)
 3. Write all slides in one pass. Rules:
    - NO title-only slide as slide 1 (jump into content)
    - Text ≥ 24px on 1920×1080

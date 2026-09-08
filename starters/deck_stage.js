@@ -129,6 +129,8 @@
 
       // Allow external seek via postMessage
       this._onMessage = (e) => {
+        // Same-origin only. 'null' is the origin of file:// pages.
+        if (e.origin !== window.location.origin && e.origin !== 'null') return;
         if (!e.data || typeof e.data !== 'object') return;
         if (typeof e.data.seekSlide === 'number') this.goToSlide(e.data.seekSlide);
       };
@@ -256,7 +258,7 @@
       const note = this._getSpeakerNote(this._current);
       const payload = { slideIndexChanged: this._current };
       if (note) payload.note = note;
-      try { window.postMessage(payload, '*'); } catch {}
+      try { window.postMessage(payload, window.location.origin === 'null' ? '*' : window.location.origin); } catch {}
     }
 
     _getSpeakerNote(idx) {

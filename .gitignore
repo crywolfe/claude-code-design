@@ -26,8 +26,16 @@ dist/
 *.pdf
 *-standalone.html
 
-# Local project settings (may contain user-specific paths/permissions)
+# Local project settings (may contain user-specific paths/permissions — and "always allow" answers that
+# widen the committed deny list; review it periodically)
 .claude/settings.local.json
+.mcp.local.json
+
+# Project-local design-system registry (brand tokens are user data, not part of the tool)
+design-systems/
+
+# Ingested third-party content (already under artifacts/, listed explicitly on purpose)
+artifacts/ingested/
 
 # OS / editor
 .DS_Store

@@ -1,0 +1,92 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(wget:*)",
+      "Bash(nc:*)",
+      "Bash(ncat:*)",
+      "Bash(socat:*)",
+      "Bash(ssh:*)",
+      "Bash(scp:*)",
+      "Bash(sftp:*)",
+      "Bash(rsync:*)",
+      "Bash(node -e:*)",
+      "Bash(node --eval:*)",
+      "Bash(node -p:*)",
+      "Bash(node --print:*)",
+      "Bash(python3 -c:*)",
+      "Bash(python -c:*)",
+      "Bash(npx:*)",
+      "Bash(npm:*)",
+      "Bash(brew:*)",
+      "Bash(pip:*)",
+      "Bash(pip3:*)",
+      "Bash(claude mcp add:*)",
+      "Bash(claude mcp remove:*)",
+      "Bash(claude config:*)",
+      "Bash(gh api:*)",
+      "Bash(gh auth:*)",
+      "Bash(gh secret:*)",
+      "Bash(gh variable:*)",
+      "Bash(gh codespace:*)",
+      "Bash(rm -rf ~:*)",
+      "Bash(rm -rf /:*)",
+      "Bash(rm -rf $HOME:*)",
+      "Bash(sudo:*)",
+      "Bash(eval:*)",
+      "Bash(printenv:*)",
+      "Bash(env)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.config/gh/**)",
+      "Read(~/.claude/**)",
+      "Read(~/.claude.json)",
+      "Read(~/.netrc)",
+      "Read(~/.npmrc)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/credentials*)",
+      "Write(~/.claude/**)",
+      "Write(~/.claude.json)",
+      "Write(~/.ssh/**)",
+      "Write(~/.aws/**)",
+      "Write(~/.config/**)",
+      "Write(~/.zshrc)",
+      "Write(~/.zprofile)",
+      "Write(~/.zshenv)",
+      "Write(~/.bashrc)",
+      "Write(~/.bash_profile)",
+      "Write(~/.profile)",
+      "Write(~/.gitconfig)",
+      "Write(~/.npmrc)",
+      "Edit(~/.claude/**)",
+      "Edit(~/.claude.json)",
+      "Edit(~/.ssh/**)",
+      "Edit(~/.aws/**)",
+      "Edit(~/.config/**)",
+      "Edit(~/.zshrc)",
+      "Edit(~/.zprofile)",
+      "Edit(~/.zshenv)",
+      "Edit(~/.bashrc)",
+      "Edit(~/.bash_profile)",
+      "Edit(~/.profile)",
+      "Edit(~/.gitconfig)",
+      "Edit(~/.npmrc)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard-bash.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

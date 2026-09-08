@@ -2,7 +2,7 @@
 name: make-tweakable
 description: Add an in-artifact floating Tweaks panel that lets the user adjust colors, fonts, spacing, layout variants live in the preview. Persists via claude-pipe pattern (pending.yaml + apply-tweaks skill).
 argument-hint: <html-path> [keys to expose]
-allowed-tools: Read Write Edit Glob Grep Bash(mkdir:*) mcp__chrome-devtools__*
+allowed-tools: Read Write Edit Glob Grep Bash(mkdir -p artifacts:*) mcp__chrome-devtools__navigate_page mcp__chrome-devtools__take_screenshot mcp__chrome-devtools__take_snapshot mcp__chrome-devtools__list_console_messages mcp__chrome-devtools__evaluate_script
 ---
 
 # Make Tweakable
@@ -225,6 +225,6 @@ Return to user: "Tweaks enabled. Press Shift+T in the preview to open. Click 'Li
 
 ## Phase 5 — Verify
 
-Run `/serve` (needed if artifact uses external `.jsx` starters), then `/done http://127.0.0.1:4567/<html-path>` → panel appears, Shift+T toggles, no console errors.
+Run `/serve` (needed if artifact uses external `.jsx` starters), then `/done http://127.0.0.1:4567/<path-relative-to-artifacts>` → panel appears, Shift+T toggles, no console errors.
 
 **Note on persistence:** File System Access API requires http origin (works on `file://` in Chrome >= 2024 but with caveats). Recommend always serving tweakable artifacts over http.

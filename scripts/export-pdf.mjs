@@ -19,9 +19,20 @@ const outAbs = path.resolve(process.cwd(), output || input.replace(/\.html?$/i, 
 console.log(`input:  ${inAbs}`);
 console.log(`output: ${outAbs}`);
 
-const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
+// --no-sandbox is only needed when running as root in a container; gate it on CI.
+const browser = await puppeteer.launch({ args: process.env.CI ? ['--no-sandbox'] : [] });
 try {
   const page = await browser.newPage();
+
+  // Block every outbound request except the artifact itself and the pinned CDNs it may use.
+  await page.setRequestInterception(true);
+  page.on('request', (req) => {
+    const u = req.url();
+    const ok = u.startsWith('file://') || u.startsWith('data:') || u.startsWith('blob:')
+      || u.startsWith('https://unpkg.com/')
+      || u.startsWith('https://fonts.googleapis.com/') || u.startsWith('https://fonts.gstatic.com/');
+    if (ok) req.continue(); else req.abort();
+  });
   await page.goto(pathToFileURL(inAbs).toString(), { waitUntil: 'networkidle0', timeout: 30000 });
 
   // If this is a deck, switch it to natural size so print CSS works

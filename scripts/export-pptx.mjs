@@ -44,8 +44,19 @@ try {
   process.exit(1);
 }
 
-const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
+// --no-sandbox is only needed when running as root in a container; gate it on CI.
+const browser = await puppeteer.launch({ args: process.env.CI ? ['--no-sandbox'] : [] });
 const page = await browser.newPage();
+
+// Block every outbound request except the artifact itself and the pinned CDNs it may use.
+await page.setRequestInterception(true);
+page.on('request', (req) => {
+  const u = req.url();
+  const ok = u.startsWith('file://') || u.startsWith('data:') || u.startsWith('blob:')
+    || u.startsWith('https://unpkg.com/')
+    || u.startsWith('https://fonts.googleapis.com/') || u.startsWith('https://fonts.gstatic.com/');
+  if (ok) req.continue(); else req.abort();
+});
 await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
 await page.goto(pathToFileURL(inputAbs).toString(), { waitUntil: 'networkidle0' });
 

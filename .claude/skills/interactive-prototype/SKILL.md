@@ -2,7 +2,7 @@
 name: interactive-prototype
 description: Build a hi-fi clickable React prototype with realistic device chrome. Triggered by "prototype", "clickable", "app mockup", "interactive demo".
 argument-hint: <feature or app description>
-allowed-tools: Read Write Edit Glob Grep Bash(cp:*) Bash(open:*) Bash(mkdir:*) mcp__chrome-devtools__*
+allowed-tools: Read Write Edit Glob Grep Bash(cp starters/:*) Bash(cp artifacts/:*) Bash(mkdir -p artifacts:*) Bash(ls design-systems:*) Bash(open file://:*) Bash(open http://127.0.0.1:*) Bash(xdg-open file://:*) Bash(xdg-open http://127.0.0.1:*) mcp__chrome-devtools__navigate_page mcp__chrome-devtools__take_screenshot mcp__chrome-devtools__take_snapshot mcp__chrome-devtools__list_console_messages mcp__chrome-devtools__evaluate_script
 ---
 
 # Interactive Prototype
@@ -13,9 +13,12 @@ Build a working clickable prototype — not a static mockup. Uses React + Babel 
 
 Before design questions, silently check for context:
 1. `Read .claude/design-tokens.json` if exists
-2. `Bash(ls ~/.claude/design-systems/ 2>/dev/null)` — if brief mentions a brand matching a folder name → auto-apply
+2. `Bash(ls design-systems/ 2>/dev/null)` — project-local registry (gitignored). If the brief names a registered brand, say
+   "Found design system <name> in the registry. Apply it?" and wait. Never auto-apply.
 3. `Glob` for codebase tokens: `**/tailwind.config.*`, `**/theme.{ts,js,json}`, `**/tokens.{css,scss}`, `**/_variables.*`
-4. Scan brief for: github URL → `Skill: ingest-github`; Figma URL → `Skill: ingest-figma`; image attachment → `Skill: ingest-screenshot`; `.md`/`.pdf` → `Read`
+4. Scan brief/attachments for external references (github URL, Figma URL, image path, .md/.pdf).
+   Do NOT invoke any ingest skill automatically. List what was found and ask one
+   AskUserQuestion: "Ingest <X>? (yes / no)". Only invoke the ingest skill on an explicit yes.
 
 If nothing found, ask ONE `AskUserQuestion`: design system from registry / codebase / screenshot / Figma / none (use frontend-design) / Claude decides. Report "Using <context>. Proceeding."
 
@@ -73,7 +76,7 @@ Using context from Phase 0, commit to a mobile-aware system:
    </body>
    </html>
    ```
-2. `Bash(cp starters/device_frame.jsx "$(dirname <html>)/")` + `Bash(cp starters/animations.jsx "$(dirname <html>)/")` — copy into the same dir as the HTML
+2. `Bash(cp starters/device_frame.jsx artifacts/<dir-of-html>/)` + `Bash(cp starters/animations.jsx artifacts/<dir-of-html>/)` — copy into the same dir as the HTML, spelling the directory out literally (no `$(dirname …)`)
 3. Navigation pattern: `useState` for current screen. For transitions use `<Transition>` from animations.jsx.
 4. **Critical React rule:** never `const styles = {...}`. Use component-prefixed names: `const headerStyles`, `const cardStyles`. Inline styles also OK.
 5. Mock data inline; no external fetch.
@@ -84,7 +87,7 @@ Using context from Phase 0, commit to a mobile-aware system:
 
 ```
 /serve
-/done http://127.0.0.1:4567/artifacts/<slug>.html
+/done http://127.0.0.1:4567/<slug>.html
 ```
 
 Fix errors → `Skill: verify-artifact` in background.

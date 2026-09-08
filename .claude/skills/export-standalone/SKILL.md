@@ -2,7 +2,7 @@
 name: export-standalone
 description: Bundle an HTML artifact into a single self-contained file with all CSS/JS/images inlined as data URLs. Requires `monolith` CLI (brew install monolith).
 argument-hint: <input.html> [output.html]
-allowed-tools: Read Write Bash(monolith:*) Bash(realpath:*) Bash(mkdir:*) Bash(which:*) Bash(ls:*) Bash(stat:*)
+allowed-tools: Read Write Bash(monolith --isolate --no-metadata:*) Bash(realpath:*) Bash(mkdir -p:*) Bash(which:*) Bash(ls:*) Bash(stat:*)
 ---
 
 # Export Standalone
@@ -20,13 +20,13 @@ Produce a single HTML file that works offline (no external dependencies). Uses `
 1. Resolve paths:
    - `$0` = input HTML (required)
    - `$1` = output HTML (default: `<input>-standalone.html`)
-   - `Bash(mkdir -p $(dirname <output>))` if needed
+   - If the output directory does not exist: `Bash(mkdir -p <output-dir>)` with the literal directory (no command substitution)
 
 2. Run monolith:
    ```
-   Bash(monolith "<input>" --isolate --no-metadata -o "<output>")
+   Bash(monolith --isolate --no-metadata "<input>" -o "<output>")
    ```
-   Flags:
+   The flags come first — the permission grant is the literal prefix `monolith --isolate --no-metadata`. Flags:
    - `--isolate` — CSP to prevent any remote resource loads after bundling
    - `--no-metadata` — strip `<!-- saved from ... -->` metadata
 

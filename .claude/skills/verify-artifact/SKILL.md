@@ -68,8 +68,8 @@ Deeper check than `/done` — uses vision on the actual rendering and flags visu
 
 3. **Take a fresh screenshot** to a timestamped path:
    ```
-   ts=$(Bash(date -u +%Y%m%dT%H%M%SZ))
-   mcp__chrome-devtools__take_screenshot({ filePath: `.claude/verify-${ts}.png`, fullPage: true })
+   Bash(date -u +%Y%m%dT%H%M%SZ)   → use the printed value as <ts> (no shell substitution)
+   mcp__chrome-devtools__take_screenshot({ filePath: `.claude/verify-<ts>.png`, fullPage: true })
    ```
 
    For decks that passed the overflow audit, also sample slides at positions `[0, mid, last]` and save as `.claude/verify-${ts}-slide-${n}.png` — vision-check each rather than just the current viewport.
