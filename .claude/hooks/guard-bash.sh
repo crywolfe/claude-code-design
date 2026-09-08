@@ -63,8 +63,28 @@ re_echo_tok='(echo|printf)[^|;&]*\$\{?[A-Z_]*(TOKEN|SECRET|KEY|PASS)'
 if [[ "$cmd" =~ $re_echo_tok ]]; then deny "printing a secret-looking variable"; fi
 
 # ---------------------------------------------------------------- writes outside the project via redirection
+# Absolute paths inside the project (what `realpath` prints) are fine: blank out the project dir first.
+cmd_redir="$cmd"
+proj="${CLAUDE_PROJECT_DIR:-}"
+if [[ -n "$proj" && "$proj" == /* ]]; then cmd_redir="${cmd//"$proj"/PROJECT_DIR}"; fi
+re_traverse='PROJECT_DIR/\.\.(/|[[:space:]]|$)'
+if [[ "$cmd_redir" =~ $re_traverse ]]; then deny "path traversal out of the project"; fi
 re_redir='(>|>>|\|[[:space:]]*tee([[:space:]]+-a)?)[[:space:]]*(~|\$HOME|/Users/|/home/|/etc/|/usr/|/opt/|/Library/)'
-if [[ "$cmd" =~ $re_redir ]]; then deny "redirect outside the project"; fi
+if [[ "$cmd_redir" =~ $re_redir ]]; then deny "redirect outside the project"; fi
+
+# ---------------------------------------------------------------- zip / unzip: archives only land in handoff/ or artifacts/
+re_zip="${W}zip[[:space:]]"
+if [[ "$cmd" =~ $re_zip ]]; then
+  re_zip_ok="${W}zip[[:space:]]+(-[a-zA-Z0-9]+[[:space:]]+)*(handoff/|artifacts/)[^[:space:]]+"
+  if ! [[ "$cmd" =~ $re_zip_ok ]]; then deny "zip: output must be under handoff/ or artifacts/"; fi
+fi
+re_unzip="${W}unzip[[:space:]]"
+if [[ "$cmd" =~ $re_unzip ]]; then
+  # only stdout / listing modes; never extract to disk
+  re_unzip_ok="${W}unzip[[:space:]]+(-p|-l|-Z)[[:space:]]"
+  re_unzip_d='(^|[[:space:]])-d([[:space:]]|$)'
+  if ! [[ "$cmd" =~ $re_unzip_ok ]] || [[ "$cmd" =~ $re_unzip_d ]]; then deny "unzip: only -p (to stdout) or -l (list) are allowed"; fi
+fi
 
 # ---------------------------------------------------------------- open: only artifacts and the local server
 re_open="${W}(open|xdg-open)[[:space:]]"
