@@ -16,9 +16,10 @@ Before exploring variations, silently check for context:
 2. `Bash(ls design-systems/ 2>/dev/null)` — project-local registry (gitignored). If the brief names a registered brand, say
    "Found design system <name> in the registry. Apply it?" and wait. Never auto-apply.
 3. `Glob` codebase tokens at project root
-4. Scan brief/attachments for external references (github URL, Figma URL, image path, .md/.pdf).
+4. Scan brief/attachments for external references: github URL → `ingest-github`, Figma URL → `ingest-figma`,
+   image path → `ingest-screenshot`, `.pptx` / `.docx` / `.xlsx` / `.pdf` path → `ingest-document`, `.md` / `.txt` → `Read`.
    Do NOT invoke any ingest skill automatically. List what was found and ask one
-   AskUserQuestion: "Ingest <X>? (yes / no)". Only invoke the ingest skill on an explicit yes.
+   AskUserQuestion: "Ingest <X>? (yes / no)". Only invoke the matching ingest skill on an explicit yes.
 
 If nothing — ONE `AskUserQuestion`: design system / codebase / screenshot / Figma / none / decide. Report "Using <context>. Proceeding." — then proceed greyscale regardless (wireframes are pre-color).
 

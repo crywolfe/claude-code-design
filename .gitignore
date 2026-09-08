@@ -3,8 +3,8 @@ node_modules/
 
 # User work — not part of the tool itself
 artifacts/
-handoff/
-examples/
+/handoff/
+/examples/
 assets/thumbs/
 assets.html
 design-assets.json

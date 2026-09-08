@@ -97,9 +97,11 @@ If the system is brand-specific (not generic "minimal monochrome" but e.g. "Acme
 > "Save to `design-systems/<slug>/` (project-local registry) for reuse?"
 
 If yes:
-1. `Bash(mkdir -p design-systems/<slug>)`
-2. `Bash(cp .claude/design-tokens.json design-systems/<slug>/tokens.json)` and `Bash(cp artifacts/design-system.html design-systems/<slug>/preview.html)`
-3. Report: "Saved to registry. Later sessions can `/use-design-system <slug>`, and Phase 0 will offer it when the brief names the brand."
+1. If `design-systems/<slug>/manifest.json` exists, `Read` it. `locked: true` → do **not** overwrite; offer to save as `<slug>-remix` (a remix keeps `source` and adds `"remix_of": "<slug>"`). Otherwise bump `version`.
+2. `Bash(mkdir -p design-systems/<slug>)`
+3. `Bash(cp .claude/design-tokens.json design-systems/<slug>/tokens.json)` and `Bash(cp artifacts/design-system.html design-systems/<slug>/preview.html)`
+4. `Write design-systems/<slug>/manifest.json` — `{ "name", "version", "default": false, "locked": false, "source": "<figma|github|screenshot|document|scratch>", "created_at", "updated_at" }` (keep `created_at`, `default`, `locked`, `synced_*` from an existing manifest). Ask "Make it the default for this project?" only if no other entry is default.
+5. Report: "Saved to registry (v<version>). Later sessions can `/use-design-system <slug>`, Phase 0 will offer it when the brief names the brand, and `/sync-design-system <slug>` pushes it to Claude Design."
 
 The registry format (gitignored, lives inside the repo):
 ```

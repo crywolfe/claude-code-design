@@ -17,9 +17,10 @@ Before asking design questions, detect context **silently** via auto-checks. Onl
 1. `Read .claude/design-tokens.json` — project tokens, if exist → load
 2. `Bash(ls design-systems/ 2>/dev/null)` — project-local registry. If the brief mentions a brand name matching a folder (e.g. brief "Acme deck" + `design-systems/acme/`), say "Found design system acme in the registry. Apply it?" and wait. Never auto-apply.
 3. `Glob **/tailwind.config.* **/theme.{ts,js,json} **/tokens.{css,scss} **/_variables.*` at project root — if found, note "codebase detected" and `Read` them
-4. Scan user message/attachments for external references (GitHub URL, Figma URL, image path, `.md` / `.txt` / `.pdf`).
+4. Scan user message/attachments for external references: GitHub URL → `ingest-github`, Figma URL → `ingest-figma`,
+   image path → `ingest-screenshot`, `.pptx` / `.docx` / `.xlsx` / `.pdf` path → `ingest-document`, `.md` / `.txt` → `Read`.
    Do NOT invoke any ingest skill automatically. List what was found and ask one
-   `AskUserQuestion`: "Ingest <X>? (yes / no)". Only invoke `ingest-github` / `ingest-figma` / `ingest-screenshot` or `Read` the document on an explicit yes.
+   `AskUserQuestion`: "Ingest <X>? (yes / no)". Only invoke the matching ingest skill (or `Read` the document) on an explicit yes.
 
 ### One-question fallback (only if nothing detected)
 If no context found after auto-detect, use `AskUserQuestion` with **a single question**, text-options:

@@ -66,6 +66,42 @@ Deeper check than `/done` — uses vision on the actual rendering and flags visu
    - `WARN` (`headroom < 40`) — **P1**. Visually tight against edge (font-metric variance can push over). Report as soft issue.
    - `OK` — proceed.
 
+2b. **Design-system conformance (if `.claude/design-tokens.json` exists).** Claude Design validates artifacts against the active design system; here it is a computed-style walk. `Read .claude/design-tokens.json`, then run with the token palette pasted into `TOKENS`:
+
+   ```js
+   // mcp__chrome-devtools__evaluate_script
+   () => {
+     const TOKENS = { colors: { /* name: "#rrggbb" from design-tokens.json */ }, fonts: [ /* family names */ ], radii: [ /* px numbers */ ] };
+     const DECORATIVE = '.glow, .glow-2, .hero-glow, .chrome, [data-decorative], [aria-hidden="true"].backdrop, #tweaks-panel, #tweaks-panel *';
+     const hex2rgb = (h) => { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+     const parseRgb = (s) => { const m = s.match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/); return m ? [+m[1], +m[2], +m[3], m[4] === undefined ? 1 : +m[4]] : null; };
+     const pal = Object.entries(TOKENS.colors).map(([name, hex]) => [name, hex2rgb(hex)]);
+     const nearest = (rgb) => pal.map(([n, t]) => [n, Math.hypot(rgb[0]-t[0], rgb[1]-t[1], rgb[2]-t[2])]).sort((a, b) => a[1] - b[1])[0];
+     const fontOk = (ff) => TOKENS.fonts.some(f => ff.toLowerCase().includes(f.toLowerCase()));
+     const offColor = new Map(), offFont = new Map(), offRadius = new Map();
+     const label = (el) => (el.id ? '#' + el.id : el.tagName.toLowerCase() + (el.className?.toString?.() ? '.' + el.className.toString().trim().split(/\s+/)[0] : ''));
+     for (const el of document.body.querySelectorAll('*')) {
+       if (el.matches(DECORATIVE)) continue;
+       const cs = getComputedStyle(el);
+       if (cs.display === 'none') continue;
+       for (const prop of ['color', 'backgroundColor', 'borderTopColor']) {
+         const rgb = parseRgb(cs[prop]); if (!rgb || rgb[3] === 0) continue;
+         const [name, d] = nearest(rgb);
+         if (d > 12) { const k = cs[prop]; const e = offColor.get(k) || { count: 0, nearest: name, distance: Math.round(d), sample: label(el), prop }; e.count++; offColor.set(k, e); }
+       }
+       if (el.textContent?.trim() && !fontOk(cs.fontFamily)) { const k = cs.fontFamily; const e = offFont.get(k) || { count: 0, sample: label(el) }; e.count++; offFont.set(k, e); }
+       const r = parseFloat(cs.borderTopLeftRadius);
+       if (TOKENS.radii.length && r > 0 && !TOKENS.radii.includes(r)) { const e = offRadius.get(r) || { count: 0, sample: label(el) }; e.count++; offRadius.set(r, e); }
+     }
+     const top = (m, n) => [...m.entries()].sort((a, b) => b[1].count - a[1].count).slice(0, n).map(([value, info]) => ({ value, ...info }));
+     return { offColor: top(offColor, 8), offFont: top(offFont, 4), offRadius: top(offRadius, 4) };
+   }
+   ```
+
+   Caveat: `parseRgb` only reads `rgb()` / `rgba()`. Chrome reports colors authored in `oklch()`, `color()`, `lab()` etc. as those functions, so such elements are skipped silently — if the artifact uses `oklch()` (this file recommends it), say so in the report and treat the color walk as partial.
+
+   Severity: any `offFont` → **P1** (typography is the loudest brand signal). `offColor` with `distance > 40` → **P1**, otherwise **P2** ("drift"). `offRadius` → **P2**. Report as `[P2] 3 elements use rgb(217,119,87) (nearest token: primary, Δ 18) — e.g. button.cta`. Do not auto-fix; only when the user asks for `--fix`, replace each off-token value in the source with the nearest token via `Edit` and re-run this step. Colors deliberately outside the palette (a screenshot, a placeholder) are fine — say so instead of listing them.
+
 3. **Take a fresh screenshot** to a timestamped path:
    ```
    Bash(date -u +%Y%m%dT%H%M%SZ)   → use the printed value as <ts> (no shell substitution)

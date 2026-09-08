@@ -86,8 +86,12 @@ Available commands & skills:
   /ingest-figma <url>           — pull from Figma (needs FIGMA_TOKEN)
   /make-tweakable <html>        — add live tweak panel
   /apply-tweaks <html>          — persist panel changes
+  /ingest-document <file>       — theme + outline from PPTX/DOCX/XLSX/PDF
   /register-asset <html>        — add to assets.html overview
-  /verify-artifact <html>       — vision-based QA
+  /verify-artifact <html>       — vision + design-system conformance QA
+  /snapshot <html> <label>      — save / list / restore versions
+  /publish <html>               — private share link on claude.ai + comments
+  /sync-design-system <name>    — push a registry entry to Claude Design
   /export-pdf  /export-pptx  /export-standalone  /handoff
   /preview /done /screenshot    — operational atomics
 ```

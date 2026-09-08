@@ -2,7 +2,7 @@
 name: apply-tweaks
 description: Apply buffered tweaks from pending.yaml to the source HTML file. Invoked when user says "save tweaks", "apply tweaks", "persist panel changes", or runs /apply-tweaks.
 argument-hint: <html-path>
-allowed-tools: Read Write Edit Bash(ls artifacts/:*) Bash(cat artifacts/:*) Bash(mkdir -p artifacts:*) Bash(date:*) Bash(mv artifacts/:*)
+allowed-tools: Read Write Edit Bash(ls artifacts/:*) Bash(mkdir -p artifacts:*) Bash(date:*)
 ---
 
 # Apply Tweaks
@@ -29,15 +29,17 @@ If skipping date match (e.g. resume from yesterday), `Bash(ls artifacts/tweaks/)
    - `Read` the target HTML (path from state.yaml or `$0`)
    - Extract the `__tweak_schema` block (JSON inside `<script id="__tweak_schema">`)
 
-3. **Validate each pending key:**
+3. **Validate each pending key against the typed schema:**
    - Every key in `pending.yaml` must exist in schema
-   - Value type must match schema (color = hex, number = in [min..max], boolean)
+   - Value must match the declared type: `color` = `#rrggbb`; `number` = within `[min..max]`; `boolean`; `enum` = one of `options`; `string` = plain text ≤ `maxLength` (default 200), no `<` or `>` (text goes into `textContent`, never markup)
    - If any key invalid: report which + stop (do not partially apply)
 
-4. **Apply:** for each key → value in pending:
-   - **Primary pattern — CSS var on `:root`:** find `--tweak-<key>: <old>;` and `Edit` to new value
-   - **Secondary pattern — marker block:** find `<!-- tweak:<key> -->...<!-- /tweak:<key> -->` and `Edit` the content inside
-   - If neither marker found → fail loudly (HTML didn't use `/make-tweakable` pattern)
+4. **Apply:** for each key → value in pending, by type:
+   - `color` / `number` / `boolean` — **CSS var on `:root`:** find `--tweak-<key>: <old>;` and `Edit` to new value (boolean: also update `"default"` in the schema block so the class toggle starts in the new state)
+   - `enum` — `Edit` the schema `"default"` and, if the root element carries `data-tweak-<key>="…"`, that attribute
+   - `string` — `Edit` the text content of every element matching `target` (default `[data-tweak="<key>"]`) and the schema `"default"`
+   - **Marker block fallback:** `<!-- tweak:<key> -->...<!-- /tweak:<key> -->` → `Edit` the content inside
+   - If no pattern matches for a key → fail loudly (HTML didn't use `/make-tweakable` pattern)
 
 5. **Atomic write via Edit:** each `Edit` is already atomic in Claude Code, so no tmp-rename dance needed.
 
@@ -66,7 +68,7 @@ If skipping date match (e.g. resume from yesterday), `Bash(ls artifacts/tweaks/)
 ## Revert path
 
 If user says "revert last tweaks":
-1. `Bash(ls -t artifacts/tweaks/<session-id>/applied/)` — get most recent
+1. `Bash(ls artifacts/tweaks/<session-id>/applied/)` — the filenames are `YYYYMMDDTHHMMSSZ.yaml`, so the last one in name order is the most recent
 2. `Read` that file — get the delta
 3. Reverse each change (find current value in HTML, restore previous)
 4. Append a new applied entry with `type: revert` and reference to reverted file

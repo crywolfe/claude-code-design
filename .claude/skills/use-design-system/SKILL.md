@@ -1,17 +1,28 @@
 ---
 name: use-design-system
 description: Explicitly load a design system from the project-local registry at design-systems/<name>/ for the current project. Use when user says "use the Acme design system", "apply company-x tokens", or similar.
-argument-hint: <design-system-name>
-allowed-tools: Read Write Bash(ls design-systems:*) Bash(test -d design-systems/:*) Bash(mkdir -p .claude) Bash(cp design-systems/:*)
+argument-hint: <design-system-name> | --default <name> | --lock <name> | --unlock <name>
+allowed-tools: Read Write Edit Bash(ls design-systems:*) Bash(test -d design-systems/:*) Bash(mkdir -p .claude) Bash(cp design-systems/:*)
 ---
 
 # Use Design System
 
 Load a design system from the project-local registry `design-systems/<name>/` (gitignored) into `.claude/design-tokens.json`.
 
+## Governance flags (Claude Design's published / default / locked)
+
+Each registry entry may carry `design-systems/<name>/manifest.json`:
+```json
+{ "name": "acme", "version": 3, "default": false, "locked": false, "source": "figma | github | screenshot | document | scratch",
+  "created_at": "…", "updated_at": "…", "synced_project_id": null, "synced_at": null }
+```
+- `--default <name>` → set `default: true` on that manifest and `false` on every other (`Edit`; create the manifest if missing). A bare `/use-design-system` with no name loads the default without asking.
+- `--lock <name>` / `--unlock <name>` → toggle `locked`. `/create-design-system` refuses to overwrite a locked entry and offers `<name>-remix` instead.
+- Without a manifest an entry behaves as `default: false, locked: false`.
+
 ## Steps
 
-1. If `$0` (name) is missing → `Bash(ls design-systems/ 2>/dev/null)` and show the list, ask which one. `$0` must be a plain folder name (letters, digits, `-`, `_`) — reject anything containing `/` or `..`.
+1. If `$0` (name) is missing → `Bash(ls design-systems/ 2>/dev/null)`; `Read` each `manifest.json` that exists; if exactly one has `default: true`, use it and say so. Otherwise show the list (marking default / locked) and ask which one. `$0` must be a plain folder name (letters, digits, `-`, `_`) — reject anything containing `/` or `..`.
 
 2. Verify the folder exists:
    `Bash(test -d design-systems/$0)` — exit code 0 = ok.

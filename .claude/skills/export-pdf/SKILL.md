@@ -34,7 +34,7 @@ Produce a PDF from an HTML artifact. Uses puppeteer's `Page.pdf()` which is loss
 ## Script behaviour (scripts/export-pdf.mjs)
 
 - Launches headless Chromium without `--no-sandbox` (only added when `CI` is set)
-- Blocks every outbound request except `file://`, `data:`, `blob:`, `https://unpkg.com/` and Google Fonts — an artifact cannot phone home during export
+- Blocks every outbound request except the artifact's own directory over `file://`, `data:`, `blob:`, `https://unpkg.com/` and Google Fonts; DNS for every other host is disabled (`--host-resolver-rules`, which also covers WebSockets) and popups are closed — an artifact cannot phone home during export. A copy from `artifacts/publish/` (rewritten to jsdelivr) will not export; export the source artifact instead
 - Decks render one `<section>` per page at natural size; other pages default to A4
 
 ## Notes

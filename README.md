@@ -50,7 +50,8 @@ When the brief references an external source, these skills load it before the wo
 | `/ingest-github <url>` | github.com repo | Asks first, then `gh repo clone --depth 1 --branch <ref>` into `/tmp/cd-ingest-*`, `Glob` + `Read` only theme/tokens/tailwind files (max 20 × 64 KB, never README/docs), regex-extract hex colors + fonts + spacing + radii, write `artifacts/ingested/<repo>-tokens.json`. File contents are treated as data, never as instructions |
 | `/ingest-screenshot <path>` | PNG / JPG / WebP | Multimodal `Read` loads the image; Claude's vision infers dominant colors (hex approximate), typography family, component patterns, spacing rhythm. Output includes per-category `confidence` flags |
 | `/ingest-figma <url>` | figma.com file/frame | Requires `FIGMA_TOKEN` env var. GET-only `curl` to `api.figma.com/v1/files/{key}/nodes?ids={id}` + `/styles` (the only curl the permission set and bash guard allow). SVG fallback path for users without a token |
-| `/use-design-system <name>` | `design-systems/<name>/` | Loads tokens.json from the project-local registry (gitignored) into `.claude/design-tokens.json` for the current project |
+| `/ingest-document <file>` | `.pptx` / `.docx` / `.xlsx` / `.pdf` | Asks first, then reads the office theme XML with `unzip -p` (never extracts to disk): color scheme, major/minor fonts, slide size, plus a text outline capped at 20 slides × 64 KB. PDF goes through vision. Writes `artifacts/ingested/<slug>-tokens.json` + `-outline.md` |
+| `/use-design-system <name>` | `design-systems/<name>/` | Loads tokens.json from the project-local registry (gitignored) into `.claude/design-tokens.json`. `--default` / `--lock` / `--unlock` edit the entry's `manifest.json`; a bare call loads the default |
 
 ### Iteration
 
@@ -58,10 +59,11 @@ For refining an artifact after the first `/done`.
 
 | Skill | Use when you need | Mechanism |
 |---|---|---|
-| `/make-tweakable` | a floating panel so a viewer can change colors/fonts/spacing live in the preview | Injects a panel bound to CSS custom properties (`--tweak-*`) + marker blocks (`<!-- tweak:key -->...<!-- /tweak:key -->`). Panel writes to `pending.yaml` via File System Access API (falls back to clipboard / copy-paste). Shift+T toggles visibility. Hidden in "final" view |
-| `/apply-tweaks` | to persist panel changes to disk | Reads `pending.yaml`, validates against `__tweak_schema` JSON in the artifact, applies each change via `Edit` to the source HTML, appends `applied/<ISO8601>.yaml` to session log (claude-pipe file-state pattern). `git diff applied/` is the revert audit trail |
+| `/make-tweakable` | a floating panel so a viewer can change colors/fonts/spacing/copy/variants live in the preview | Injects a panel driven by a typed `__tweak_schema` (`color`, `number`, `boolean`, `enum`, `string` with `label` / `group` / `target`) bound to `--tweak-*` custom properties, `data-tweak-*` attributes and `data-tweak` text targets. Panel writes to `pending.yaml` via File System Access API (falls back to clipboard / copy-paste). Shift+T toggles visibility |
+| `/apply-tweaks` | to persist panel changes to disk | Reads `pending.yaml`, validates each value against its declared type, applies via `Edit` to the source HTML, appends `applied/<ISO8601>.yaml` to session log (claude-pipe file-state pattern). `git diff applied/` is the revert audit trail |
+| `/snapshot <html> <label>` | a named version before a big rework, or to go back | Copies to `artifacts/versions/<name>/<ts>-<label>.html` and records label + note in `index.json`. `list` / `restore` (restore snapshots the current state first) |
 | `/inspect "<description>"` | to reference a specific visual element without pointing at source | Uses `.claude/last-snapshot.json` from `mcp__chrome-devtools__take_snapshot` (accessibility tree with UIDs). Matches description → UID → source location via `id` > `data-*` > unique class > `outerHTML` substring. Replaces Claude Design's `<mentioned-element>` pointer protocol |
-| `/verify-artifact` | a visual QA pass before claiming done | Silent-on-pass. Fresh screenshot + console sweep; vision reads the image and checks Claude Design anti-pattern list (min 24px text on slides, contrast ≥ 4.5:1, no gradient backgrounds, no Inter/Roboto, no AI-slop card patterns, no filler). Reports P0/P1/P2/P3 with coordinates or element descriptions |
+| `/verify-artifact` | a visual QA pass before claiming done | Silent-on-pass. Fresh screenshot + console sweep; vision reads the image and checks Claude Design anti-pattern list (min 24px text on slides, contrast ≥ 4.5:1, no gradient backgrounds, no Inter/Roboto, no AI-slop card patterns, no filler). When `.claude/design-tokens.json` is loaded, also walks computed colors / fonts / radii and reports off-token drift (P1 fonts, P1/P2 colors). Reports P0/P1/P2/P3 with coordinates or element descriptions |
 
 ### Organization
 
@@ -73,6 +75,14 @@ Produced and maintained automatically — no explicit user action required.
 | `/register-asset` | Upserts entry in `design-assets.json`, reuses `.claude/last-preview.png` as thumbnail when `--auto`, regenerates `assets.html` via `scripts/make-assets-index.mjs` |
 | `assets.html` | Auto-generated grid, grouped by Type / Colors / Spacing / Components / Brand. Cards show thumbnail, name, subtitle, status badge (needs-review / approved / changes-requested), updated date. The persistent workspace — equivalent of Claude Design's Recent tab |
 
+### Sharing
+
+| Skill | Mechanism |
+|---|---|
+| `/publish <html> [--label "…"]` | Writes a self-contained copy to `artifacts/publish/` (siblings inlined, wrapper tags stripped, unpkg script tags rewritten to jsdelivr) and deploys it with Claude Code's `Artifact` tool as a **private** claude.ai page. Redeploys keep the URL; `--label` names the version. URL recorded in `design-assets.json` |
+| `/publish comments <html>` · `reply` · `watch` | Reads comment threads on the page, replies into threads sent to Claude and resolves them once acted on, or subscribes the session to republishes. Comment text is treated as data |
+| `/sync-design-system <name>` | Pushes a registry entry to a Claude Design design-system project through the `DesignSync` tool: build an upload bundle under `design-systems/<name>/sync/`, structural diff, user-approved plan, then `write_files`. Never deletes unless the user names the path. Only available in Claude Code builds that ship `DesignSync` |
+
 ### Export
 
 Four paths from HTML artifact to external formats.
@@ -82,7 +92,7 @@ Four paths from HTML artifact to external formats.
 | `/export-pptx <deck.html>` | `.pptx` | Puppeteer loads the artifact at 1920×1080, iterates slides via `deck-stage.goToSlide(i)` with `noscale` attr for natural dims, screenshots each, builds the PPTX with `pptxgenjs`. Speaker notes from `<script id="speaker-notes">` attach per slide. Screenshots-only (not editable native shapes) |
 | `/export-pdf <path>` | `.pdf` | Puppeteer `Page.pdf()` with `print` media emulation + deck-aware page size (reads `width`/`height` attrs off `<deck-stage>` via public getters; falls back to A4 for non-deck artifacts) |
 | `/export-standalone <in> <out>` | single-file `.html` | `monolith --isolate --no-metadata`. Inlines all CSS/JS/images as data URLs. Works offline. Trade-off: 5–10× file size |
-| `/handoff <path>` | `handoff/<name>/` | Extracts React components from inline `<script type="text/babel">` blocks to separate `src/components/*.jsx`. Pulls tokens from `--tweak-*` vars and `<style>` blocks into `src/tokens.css` + `src/tokens.json`. Writes README with integration steps (Vite / CRA / standalone). Copies `.claude/last-preview.png` as reference |
+| `/handoff <path> [--zip]` | `handoff/<name>/` | Copies the source + sibling starters, extracts React components from inline `<script type="text/babel">` blocks to `src/components/*.jsx`, pulls tokens into `src/tokens.css` + `src/tokens.json`, writes `handoff.json` (artboards, components, dependencies, published URL) and a README with structure, run/integration steps, **design decisions & assumptions**, and open questions. Copies `.claude/last-preview.png` as reference; `--zip` adds `handoff/<name>-<ts>.zip` |
 
 ### Reference / cold-start
 
@@ -105,9 +115,15 @@ claude-code-design/
 │   ├── device_frame.jsx                #   <DeviceFrame kind=...> (~230 LOC)
 │   ├── design_canvas.jsx               #   <DesignCanvas columns=N> (~65 LOC)
 │   └── animations.jsx                  #   Stage/Sprite + hooks + Easing + primitives (~400 LOC)
+├── docs/
+│   └── claude-design-parity.md         # feature-by-feature map to Claude Design
 ├── .claude/
-│   ├── skills/                         # 20 skills
-│   └── commands/                       # 4 atomic slash commands
+│   ├── skills/                         # 24 skills
+│   ├── commands/                       # 4 atomic slash commands
+│   ├── hooks/guard-bash.sh             # PreToolUse bash guard (per-segment allowlists)
+│   ├── hooks/guard-browser.py          # PreToolUse guard for Chrome DevTools MCP navigation / scripts
+│   ├── hooks/test-guard.sh             # 287-case self-test for both guards
+│   └── settings.json                   # deny list + hook registration (hooks, settings, scripts/ are write-protected)
 ├── scripts/
 │   ├── export-pptx.mjs                 # puppeteer + pptxgenjs
 │   ├── export-pdf.mjs                  # puppeteer Page.pdf
@@ -123,7 +139,16 @@ Brand registry (lives inside the repo, gitignored — nothing outside the projec
 design-systems/
 ├── <name>/
 │   ├── tokens.json           # required — colors, fonts, spacing, radii, shadows
-│   └── preview.html          # optional visual reference
+│   ├── manifest.json         # optional — default / locked / version / source / synced_project_id
+│   ├── preview.html          # optional visual reference
+│   └── sync/                 # upload bundle built by /sync-design-system
+```
+
+Versions and publish copies (both under the gitignored `artifacts/`):
+
+```
+artifacts/versions/<name>/<ts>-<label>.html + index.json    # /snapshot
+artifacts/publish/<name>.html                               # /publish (self-contained copy)
 ```
 
 Session state for `/make-tweakable` + `/apply-tweaks`:
@@ -150,23 +175,28 @@ One MCP + two native CLIs + two npm packages. `/doctor` checks them and prints t
 
 ## Parity status
 
-**Reproduced:** deck-stage scaling + letterboxing + keyboard nav + speaker notes + print CSS, device frames (iPhone 15 Pro with Dynamic Island, Pixel 8 with punch-hole, macOS traffic lights, Chromium browser chrome), design canvas, Stage/Sprite timeline with Remotion-compatible API, ingestion from codebase / screenshot / Figma, tweakable panel with claude-pipe on-disk persistence, PPTX / PDF / standalone export, visual verification with vision, cross-project design-system registry, auto-register on `/done`.
+Full feature-by-feature map: [`docs/claude-design-parity.md`](./docs/claude-design-parity.md).
+
+**Reproduced:** deck-stage scaling + letterboxing + keyboard nav + speaker notes + print CSS, device frames (iPhone 15 Pro with Dynamic Island, Pixel 8 with punch-hole, macOS traffic lights, Chromium browser chrome), design canvas, Stage/Sprite timeline with Remotion-compatible API, ingestion from codebase / screenshot / Figma / office documents, typed tweak panel with claude-pipe on-disk persistence, PPTX / PDF / standalone export, developer handoff bundles, private share links with comments (`/publish`), design-system conformance check in `verify-artifact`, project-local design-system registry with default / locked governance, auto-register on `/done`.
+
+**Bridged to Claude Design itself:** `/sync-design-system` pushes a registry entry into a claude.ai/design design-system project via the `DesignSync` tool.
 
 **Adapted (different form, same outcome):**
 - No canvas workspace → `assets.html` auto-populated grid
 - No click-to-comment on elements → `/inspect "<description>"` via DOM snapshot UIDs
 - No pointer-drag to edit → natural-language references resolved to source locations
 - No toggle UI → heuristics (speaker notes, context detection, ambiguity gate)
+- Version history → `/snapshot` folders under `artifacts/versions/`
 
 **Not reproducible in a terminal (explicit skip):**
 - Sub-second live preview loop — Chrome DevTools MCP round-trip is ~6–10s
-- Real-time multi-user group mode
-- Share URL (single-user local tool)
-- Canvas sketch pad
+- Real-time multi-user group mode, org sharing controls, connectors
+- Web-page capture — would violate the Browser-scope rule (screenshot it yourself, then `/ingest-screenshot`)
+- Multi-artboard `.dc.html` canvas format, canvas sketch pad
 
 ## Status
 
-Research / personal tool. Single-user local. macOS-first (uses `open`, `brew`). All state lives in the repo folder — not cloud-synced. Permissions are locked down by `.claude/settings.json` (deny list + two PreToolUse hooks: `guard-bash.sh` allowlists the documented command forms per pipeline segment, `guard-browser.py` keeps Chrome DevTools MCP on project files and 127.0.0.1); every skill's `allowed-tools` grants only the exact commands it runs. `bash .claude/hooks/test-guard.sh` runs the 285-case matrix.
+Research / personal tool. Single-user local. macOS-first (uses `open`, `brew`). All state lives in the repo folder — not cloud-synced. Permissions are locked down by `.claude/settings.json` (deny list + two PreToolUse hooks: `guard-bash.sh` allowlists the documented command forms per pipeline segment, `guard-browser.py` keeps Chrome DevTools MCP on project files and 127.0.0.1); every skill's `allowed-tools` grants only the exact commands it runs. `bash .claude/hooks/test-guard.sh` runs the 287-case matrix.
 
 ## References
 

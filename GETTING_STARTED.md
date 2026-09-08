@@ -59,20 +59,19 @@ make a 3-slide deck about the history of butter
 Expected flow:
 
 1. `make-deck` skill fires on trigger ("deck", "slides")
-2. Phase 0: scans project for design tokens / attached files → reports "No context — using frontend-design for aesthetic direction". If the brief contained a GitHub/Figma URL or an image, Claude lists it and **asks** before ingesting — it never clones or fetches on its own
-3. (nothing is fetched or installed without you saying yes)
-4. Phase 1: ambiguity gate — brief has length (3 slides) but no audience/style → one or two quick `AskUserQuestion`s
-5. Phase 1.5: speaker-notes heuristic — "history of butter / 3 slides" is short → decides **notes: off**
-6. Writes `artifacts/history-of-butter.html`, copies `starters/deck_stage.js` alongside
-7. Runs `/done artifacts/history-of-butter.html`:
+2. Phase 0: scans project for design tokens / attached files → reports "No context — using frontend-design for aesthetic direction". If the brief contained a GitHub/Figma URL, a document or an image, Claude lists it and **asks** before ingesting — nothing is cloned, fetched or installed without you saying yes
+3. Phase 1: ambiguity gate — brief has length (3 slides) but no audience/style → one or two quick `AskUserQuestion`s
+4. Phase 1.5: speaker-notes heuristic — "history of butter / 3 slides" is short → decides **notes: off**
+5. Writes `artifacts/history-of-butter.html`, copies `starters/deck_stage.js` alongside
+6. Runs `/done artifacts/history-of-butter.html`:
    - Opens in Chrome via `open`
    - Chrome DevTools MCP navigates + waits for fonts
    - Screenshot saved to `.claude/last-preview.png`
    - DOM snapshot saved to `.claude/last-snapshot.json`
    - Console messages listed
-8. If clean: auto-registers the deck → updates `assets.html`
-9. Verifies visually via `verify-artifact` (silent on pass)
-10. Offers next steps: `/export-pptx`, `/export-pdf`, `/export-standalone`, `/make-tweakable`
+7. If clean: auto-registers the deck → updates `assets.html`
+8. Verifies visually via `verify-artifact` (silent on pass; also checks the active design system's tokens when one is loaded)
+9. Offers next steps: `/snapshot` a version, `/publish` a private share link, `/export-pptx`, `/export-pdf`, `/export-standalone`, `/make-tweakable`, `/handoff`
 
 Open `assets.html` in a browser to see the result with its thumbnail.
 
@@ -100,7 +99,11 @@ claude-code-design/
 | See the full skill + command map | [`README.md`](./README.md) |
 | Understand what Claude will do on my brief | [`CLAUDE.md`](./CLAUDE.md) |
 | Understand the taste + anti-pattern rules | [`CLAUDE.md`](./CLAUDE.md) "Anti-patterns" and "Scales" sections |
-| Build a reusable brand | Run `/create-design-system` — it offers to save to `design-systems/<name>/` (gitignored) at the end |
+| Build a reusable brand | Run `/create-design-system` — it offers to save to `design-systems/<name>/` (gitignored) at the end; `/use-design-system --default <name>` makes it the project default, `--lock` protects it |
+| Start from an existing deck or brand PDF | `/ingest-document <file>` (`.pptx`, `.docx`, `.xlsx` or `.pdf`) — theme colors, fonts and outline into `artifacts/ingested/` |
+| Share for feedback | `/publish artifacts/<name>.html` → private claude.ai link; `/publish comments …` reads the threads |
+| Push a brand to Claude Design proper | `/sync-design-system <name>` (needs the DesignSync tool in your Claude Code build) |
+| See what Claude Design has that this repo does not | [`docs/claude-design-parity.md`](./docs/claude-design-parity.md) |
 | Copy a working reference | `/copy-example deck` (or `prototype`, `wireframe`, `animation`, `design-system`) |
 
 ## Common issues

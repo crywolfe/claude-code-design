@@ -41,17 +41,26 @@ For each key, find hard-coded values in the HTML and replace with `var(--tweak-k
 }
 ```
 
-Add schema block:
+Add schema block. This is the typed-editor declaration (Claude Design's `data-props` idea): every key states its control type, bounds, label and group, so the panel — and `/apply-tweaks` validation — need no guessing:
 ```html
 <script id="__tweak_schema" type="application/json">
 {
-  "primaryColor": { "type": "color", "default": "#D97757" },
-  "fontSize": { "type": "number", "default": 16, "min": 12, "max": 32, "step": 1, "unit": "px" },
-  "density": { "type": "number", "default": 1, "min": 0.75, "max": 1.5, "step": 0.05 },
-  "dark": { "type": "boolean", "default": false }
+  "primaryColor": { "type": "color",   "default": "#D97757", "label": "Primary",   "group": "Colors" },
+  "fontSize":     { "type": "number",  "default": 16, "min": 12, "max": 32, "step": 1, "unit": "px", "label": "Base size", "group": "Type" },
+  "density":      { "type": "number",  "default": 1, "min": 0.75, "max": 1.5, "step": 0.05, "label": "Density", "group": "Layout" },
+  "layout":       { "type": "enum",    "default": "grid", "options": ["grid", "list", "cards"], "label": "Layout", "group": "Layout" },
+  "headline":     { "type": "string",  "default": "Ship faster", "maxLength": 60, "label": "Headline", "group": "Copy", "target": "[data-tweak=\"headline\"]" },
+  "dark":         { "type": "boolean", "default": false, "label": "Dark mode", "group": "Colors" }
 }
 </script>
 ```
+
+Types and how they apply:
+- `color` / `number` / `boolean` → CSS variable `--tweak-<key>` (boolean also toggles class `tweak-<key>` on `<html>`)
+- `enum` → `data-tweak-<key>="<value>"` attribute on `<html>`; style variants with `html[data-tweak-layout="list"] .grid { … }`
+- `string` → text content of every element matching `target` (default `[data-tweak="<key>"]`); the element also carries `data-props='{"headline":"string"}'` so a reader of the HTML sees which props it consumes
+
+Mark elements whose copy or variant is tweakable with `data-tweak="<key>"`. Keep `group` to 3–4 groups; the panel renders one collapsible section per group.
 
 ## Phase 3 — Inject Tweaks panel
 
@@ -85,9 +94,13 @@ Append before `</body>`:
     const root = document.documentElement;
     for (const [k, v] of Object.entries(values)) {
       const meta = schema[k];
-      if (meta.type === 'color' || meta.type === 'string') root.style.setProperty('--tweak-' + k, v);
+      if (meta.type === 'color') root.style.setProperty('--tweak-' + k, v);
       else if (meta.type === 'number') root.style.setProperty('--tweak-' + k, v + (meta.unit || ''));
       else if (meta.type === 'boolean') root.classList.toggle('tweak-' + k, !!v);
+      else if (meta.type === 'enum') root.setAttribute('data-tweak-' + k, v);
+      else if (meta.type === 'string') {
+        for (const el of document.querySelectorAll(meta.target || '[data-tweak="' + k + '"]')) el.textContent = v;
+      }
     }
     try { localStorage.setItem(lsKey, JSON.stringify(values)); } catch {}
   };
@@ -97,16 +110,39 @@ Append before `</body>`:
   header.innerHTML = `<span>Tweaks</span><span style="opacity:0.5;font-weight:400;font-size:11px">Shift+T to toggle</span>`;
   panel.appendChild(header);
 
+  let lastGroup = null;
   for (const [key, meta] of Object.entries(schema)) {
+    const group = meta.group || 'General';
+    if (group !== lastGroup) {
+      const h = document.createElement('div');
+      h.textContent = group;
+      h.style.cssText = 'font-size:10px;letter-spacing:.08em;text-transform:uppercase;opacity:.5;margin:12px 0 4px';
+      panel.appendChild(h);
+      lastGroup = group;
+    }
     const row = document.createElement('label');
     row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:12px;margin:8px 0';
     const label = document.createElement('span');
-    label.textContent = key;
+    label.textContent = meta.label || key;
+    label.title = key;
     label.style.cssText = 'font-family:ui-monospace,Menlo;font-size:11px;opacity:0.7';
     row.appendChild(label);
 
     let input;
-    if (meta.type === 'color') {
+    if (meta.type === 'enum') {
+      input = document.createElement('select');
+      for (const opt of meta.options || []) {
+        const o = document.createElement('option');
+        o.value = opt; o.textContent = opt; o.selected = opt === values[key];
+        input.appendChild(o);
+      }
+    } else if (meta.type === 'string') {
+      input = document.createElement('input');
+      input.type = 'text';
+      input.value = values[key];
+      if (meta.maxLength) input.maxLength = meta.maxLength;
+      input.style.width = '120px';
+    } else if (meta.type === 'color') {
       input = document.createElement('input');
       input.type = 'color';
       input.value = values[key];
