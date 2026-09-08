@@ -2,7 +2,7 @@
 name: ingest-github
 description: Clone a GitHub repo and extract design tokens (colors, fonts, spacing) from its codebase. Use when user gives a github.com URL and wants a design system or design work rooted in the repo's style.
 argument-hint: <github-url>
-allowed-tools: Read Write Glob Grep Bash(gh repo clone:*) Bash(mkdir -p /tmp/cd-ingest-:*) Bash(mkdir -p artifacts/ingested) Bash(rm -rf /tmp/cd-ingest-:*) Bash(realpath:*) Bash(basename:*)
+allowed-tools: Read Write Glob Grep Bash(which gh) Bash(gh repo clone:*) Bash(mkdir -p /tmp/cd-ingest-:*) Bash(mkdir -p artifacts/ingested) Bash(rm -rf /tmp/cd-ingest-:*) Bash(realpath:*) Bash(basename:*)
 ---
 
 # Ingest GitHub

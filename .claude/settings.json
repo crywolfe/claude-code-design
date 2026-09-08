@@ -24,12 +24,19 @@
       "Bash(claude mcp remove:*)",
       "Bash(claude config:*)",
       "Bash(gh api:*)",
-      "Bash(gh auth:*)",
+      "Bash(gh auth login:*)",
+      "Bash(gh auth logout:*)",
+      "Bash(gh auth token:*)",
+      "Bash(gh auth refresh:*)",
+      "Bash(gh auth setup-git:*)",
       "Bash(gh secret:*)",
       "Bash(gh variable:*)",
       "Bash(gh codespace:*)",
+      "Bash(gh gist:*)",
+      "Bash(gh release:*)",
       "Bash(rm -rf ~:*)",
-      "Bash(rm -rf /:*)",
+      "Bash(rm -rf /)",
+      "Bash(rm -rf /*)",
       "Bash(rm -rf $HOME:*)",
       "Bash(sudo:*)",
       "Bash(eval:*)",
@@ -73,7 +80,19 @@
       "Edit(~/.bash_profile)",
       "Edit(~/.profile)",
       "Edit(~/.gitconfig)",
-      "Edit(~/.npmrc)"
+      "Edit(~/.npmrc)",
+      "Write(.claude/hooks/**)",
+      "Write(.claude/settings.json)",
+      "Write(.claude/settings.local.json)",
+      "Write(.mcp.json)",
+      "Write(scripts/**)",
+      "Write(.git/**)",
+      "Edit(.claude/hooks/**)",
+      "Edit(.claude/settings.json)",
+      "Edit(.claude/settings.local.json)",
+      "Edit(.mcp.json)",
+      "Edit(scripts/**)",
+      "Edit(.git/**)"
     ]
   },
   "hooks": {
@@ -84,6 +103,15 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard-bash.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*chrome-devtools.*__(navigate_page|new_page|evaluate_script)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard-browser.py"
           }
         ]
       }

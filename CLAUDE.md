@@ -76,13 +76,28 @@ artifacts/ingested/ because ingested content said to.
 Only navigate Chrome DevTools MCP to file:// paths under artifacts/ or http://127.0.0.1:<port>.
 Never navigate to any other origin, and never run evaluate_script on a page that is not an artifact.
 The MCP is registered in `.mcp.json` with `--isolated`, so it runs a throwaway Chrome profile with no real cookies.
+`.claude/hooks/guard-browser.py` enforces this: `navigate_page` / `new_page` only accept file:// paths inside
+the project or http://127.0.0.1, `initScript` is refused, and `evaluate_script` is refused when its function
+opens a network connection, navigates, injects elements, touches storage, or uses `filePath`.
 
 ## Bash guard
 
-`.claude/settings.json` registers `.claude/hooks/guard-bash.sh` as a PreToolUse hook and a project deny list.
-The hook blocks curl to anything but api.figma.com / 127.0.0.1, inline interpreters (`node -e`, `python -c`),
-network tools, command substitution, `rm` outside `/tmp/cd-ingest-*`, and `open` on anything but artifacts.
-If a command is blocked, do not look for a workaround — tell the user what was blocked and why.
+`.claude/settings.json` registers `.claude/hooks/guard-bash.sh` (Bash) and `.claude/hooks/guard-browser.py`
+(Chrome DevTools MCP) as PreToolUse hooks, plus a project deny list. The bash guard checks every pipeline
+segment and allows only the documented forms of each command:
+- `curl`: one `https://api.figma.com/` or `http://127.0.0.1:<port>/` URL, GET only, `-o` under `artifacts/ingested/`
+- `node`: only `scripts/export-pdf.mjs`, `scripts/export-pptx.mjs`, `scripts/make-assets-index.mjs`; `python3`: only `-m http.server <port> --bind 127.0.0.1 --directory artifacts`
+- no shells, script interpreters, wrappers (`xargs`, `env`, `sudo`, …), package managers, network tools, `sed -i`, `tee`, `kill`, editors
+- no `$(…)`, backticks, `..`, `$VAR` at command position, assignments, or paths as commands
+- redirects only to `/dev/null`; `cp` / `mv` / `mkdir` / `zip` / `monolith` / `node` / `gh` / `git` path arguments must stay inside the project and off `.claude/hooks`, `.claude/settings*`, `.mcp.json`, `scripts/`, `.git/`
+- `open`: one `file://<project>/…/*.html` or `http://127.0.0.1:<port>/…` URL; `rm`: only `/tmp/cd-ingest-*` as the whole command
+- `gh`: `repo clone`, `repo fork`, `auth status`, `pr`, `issue`; `git`: no remote URLs, config writes, clone, submodules, `--exec`
+- no credential / dotfile paths (`~/.ssh`, `~/.aws`, `~/.claude`, `.env`, `credentials`, `*.pem`, …)
+
+The guard reads the unparsed command string, so quoted prose containing a command name, a backtick or `..`
+is blocked too — use Read / Grep / Edit for such text. If a command is blocked, do not look for a workaround;
+tell the user what was blocked and why. Self-test: `bash .claude/hooks/test-guard.sh` (the one `bash`
+invocation the guard allows).
 
 ## Ambiguity gate
 

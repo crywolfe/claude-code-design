@@ -166,7 +166,7 @@ One MCP + two native CLIs + two npm packages. `/doctor` checks them and prints t
 
 ## Status
 
-Research / personal tool. Single-user local. macOS-first (uses `open`, `brew`). All state lives in the repo folder — not cloud-synced. Permissions are locked down by `.claude/settings.json` (deny list + `guard-bash.sh` PreToolUse hook); every skill's `allowed-tools` grants only the exact commands it runs.
+Research / personal tool. Single-user local. macOS-first (uses `open`, `brew`). All state lives in the repo folder — not cloud-synced. Permissions are locked down by `.claude/settings.json` (deny list + two PreToolUse hooks: `guard-bash.sh` allowlists the documented command forms per pipeline segment, `guard-browser.py` keeps Chrome DevTools MCP on project files and 127.0.0.1); every skill's `allowed-tools` grants only the exact commands it runs. `bash .claude/hooks/test-guard.sh` runs the 285-case matrix.
 
 ## References
 

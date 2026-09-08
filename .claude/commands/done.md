@@ -1,7 +1,7 @@
 ---
 description: End-of-turn handoff — preview, wait for ready, screenshot, snapshot DOM, sweep console, auto-register asset
 argument-hint: <html-path-or-url>
-allowed-tools: Bash(open file://:*) Bash(open http://127.0.0.1:*) Bash(xdg-open file://:*) Bash(xdg-open http://127.0.0.1:*) Bash(realpath:*) Bash(date:*) Bash(mkdir -p .claude) Bash(sleep:*) Bash(ls:*) Bash(cat:*) Read Write Edit mcp__chrome-devtools__navigate_page mcp__chrome-devtools__take_screenshot mcp__chrome-devtools__take_snapshot mcp__chrome-devtools__list_console_messages mcp__chrome-devtools__evaluate_script
+allowed-tools: Bash(open file://:*) Bash(open http://127.0.0.1:*) Bash(xdg-open file://:*) Bash(xdg-open http://127.0.0.1:*) Bash(realpath:*) Bash(date:*) Bash(mkdir -p .claude) Bash(sleep:*) Read Write Edit mcp__chrome-devtools__navigate_page mcp__chrome-devtools__take_screenshot mcp__chrome-devtools__take_snapshot mcp__chrome-devtools__list_console_messages mcp__chrome-devtools__evaluate_script
 ---
 
 End-of-turn gate: make sure the artifact at `$0` opens cleanly, capture evidence, and register the asset so it shows up in `assets.html`.

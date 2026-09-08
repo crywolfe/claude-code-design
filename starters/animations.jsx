@@ -184,13 +184,15 @@
     }, [t, storageKey]);
 
     // postMessage seek protocol — lets external tools (export scripts, Stage-host iframes) seek
-    //   window.postMessage({ seekMs: 1500 }, window.location.origin === 'null' ? '*' : window.location.origin)
-    //   window.postMessage({ playing: false }, window.location.origin === 'null' ? '*' : window.location.origin)
+    //   window.postMessage({ seekMs: 1500 }, window.location.protocol === 'file:' ? '*' : window.location.origin)
+    //   window.postMessage({ playing: false }, window.location.protocol === 'file:' ? '*' : window.location.origin)
     // Messages from other origins are ignored.
     useEffect(() => {
       const onMsg = (e) => {
-        // Same-origin only. 'null' is the origin of file:// pages.
-        if (e.origin !== window.location.origin && e.origin !== 'null') return;
+        // Same-origin only. On file:// every page reports origin 'null'; on http:// (the /serve
+        // server) 'null' would be a sandboxed iframe, so it is only accepted for file:// pages.
+        const sameOrigin = window.location.protocol === 'file:' ? e.origin === 'null' : e.origin === window.location.origin;
+        if (!sameOrigin) return;
         if (!e.data || typeof e.data !== 'object') return;
         if (typeof e.data.seekMs === 'number') {
           setT(Math.max(0, Math.min(duration, e.data.seekMs)));

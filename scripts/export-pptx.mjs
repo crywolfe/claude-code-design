@@ -44,19 +44,31 @@ try {
   process.exit(1);
 }
 
+// Hosts the artifact may load from. Request interception covers HTTP(S); the resolver rule also
+// covers WebSockets and anything else interception does not see (IP literals are still blocked by
+// interception, since resolver rules never apply to them).
+const ALLOWED_HOSTS = ['unpkg.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
+const launchArgs = [
+  '--host-resolver-rules=MAP * ~NOTFOUND, ' + ALLOWED_HOSTS.map((h) => `EXCLUDE ${h}`).join(', '),
+];
 // --no-sandbox is only needed when running as root in a container; gate it on CI.
-const browser = await puppeteer.launch({ args: process.env.CI ? ['--no-sandbox'] : [] });
+if (process.env.CI) launchArgs.push('--no-sandbox');
+const browser = await puppeteer.launch({ args: launchArgs });
 const page = await browser.newPage();
+// Only the artifact's own directory may be read over file://.
+const artifactDir = pathToFileURL(path.dirname(inputAbs) + path.sep).toString();
 
-// Block every outbound request except the artifact itself and the pinned CDNs it may use.
+// Block every outbound request except the artifact's directory and the pinned CDNs it may use.
 await page.setRequestInterception(true);
 page.on('request', (req) => {
   const u = req.url();
-  const ok = u.startsWith('file://') || u.startsWith('data:') || u.startsWith('blob:')
+  const ok = u.startsWith(artifactDir) || u.startsWith('data:') || u.startsWith('blob:')
     || u.startsWith('https://unpkg.com/')
     || u.startsWith('https://fonts.googleapis.com/') || u.startsWith('https://fonts.gstatic.com/');
   if (ok) req.continue(); else req.abort();
 });
+// A popup would be a fresh page with no interception installed: close it.
+page.on('popup', (p) => { p.close().catch(() => {}); });
 await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
 await page.goto(pathToFileURL(inputAbs).toString(), { waitUntil: 'networkidle0' });
 
