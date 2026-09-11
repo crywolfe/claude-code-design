@@ -12,6 +12,12 @@ This repo gives you the same generative power — minus the canvas — through *
 
 ## Install
 
+This repo is a **Claude Code workspace**, meant to be used as a **GitHub template**: one copy per team or project, with your own artifacts, design systems and permission answers living inside it.
+
+**As a template (recommended):** on GitHub, open the repo, click **Use this template → Create a new repository**, then clone your copy. The template ships without artifacts, design systems or `settings.local.json` (all gitignored; `/doctor` creates the working dirs), so nothing personal is carried over. (Repository owners: enabling *Template repository* is a one-time switch under **Settings → General**.)
+
+**As a plain clone:**
+
 ```bash
 git clone https://github.com/bluzir/claude-code-design.git
 cd claude-code-design
@@ -26,6 +32,8 @@ In a Claude Code session in this folder:
 First-run health check: verifies Chrome DevTools MCP (declared in `.mcp.json`, pinned and `--isolated`), `monolith`, `pptxgenjs + puppeteer`, creates working dirs, runs a smoke test. It prints the install commands for anything missing — you run them; the agent never installs software.
 
 Full requirements + walkthrough in [`GETTING_STARTED.md`](./GETTING_STARTED.md).
+
+**First session in a fresh copy:** approve the `.mcp.json` prompt (pinned `chrome-devtools-mcp`, `--isolated`), run `/doctor`, run `bash .claude/hooks/test-guard.sh` and confirm it reports 0 failures. What the security model is, and what an auditor should check, is drawn out in [`docs/architecture/security-architecture.html`](./docs/architecture/security-architecture.html) (open it in a browser). The plan for packaging this as a plugin for enterprise inference (Microsoft Foundry, Amazon Bedrock, Google Cloud) is in [`docs/enterprise-plugin.md`](./docs/enterprise-plugin.md).
 
 ## Features
 
@@ -196,7 +204,7 @@ Full feature-by-feature map: [`docs/claude-design-parity.md`](./docs/claude-desi
 
 ## Status
 
-Research / personal tool. Single-user local. macOS-first (uses `open`, `brew`). All state lives in the repo folder — not cloud-synced. Permissions are locked down by `.claude/settings.json` (deny list + two PreToolUse hooks: `guard-bash.sh` allowlists the documented command forms per pipeline segment, `guard-browser.py` keeps Chrome DevTools MCP on project files and 127.0.0.1); every skill's `allowed-tools` grants only the exact commands it runs. `bash .claude/hooks/test-guard.sh` runs the 287-case matrix.
+Research / personal tool, packaged as a GitHub template workspace. Single-user local. macOS-first (uses `open`, `brew`). All state lives in the repo folder — not cloud-synced. It runs on the Claude Code CLI only; Claude Desktop is not involved. Publishing (`/publish`) and `/sync-design-system` need a claude.ai login and are unavailable on third-party inference providers; everything else works there (see [`docs/enterprise-plugin.md`](./docs/enterprise-plugin.md)). Permissions are locked down by `.claude/settings.json` (deny list + two PreToolUse hooks: `guard-bash.sh` allowlists the documented command forms per pipeline segment, `guard-browser.py` keeps Chrome DevTools MCP on project files and 127.0.0.1); every skill's `allowed-tools` grants only the exact commands it runs. `bash .claude/hooks/test-guard.sh` runs the 287-case matrix.
 
 ## References
 
