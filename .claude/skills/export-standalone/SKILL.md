@@ -22,15 +22,17 @@ Produce a single HTML file that works offline (no external dependencies). Uses `
    - `$1` = output HTML (default: `<input>-standalone.html`)
    - If the output directory does not exist: `Bash(mkdir -p <output-dir>)` with the literal directory (no command substitution)
 
-2. Run monolith:
+2. Drop dev-only scripts. Any `<script … data-dev-only>` tag (live reload, editor overlay, sketch pad) is removed from the copy before bundling, and its sibling file is not copied. These are preview-time tools, not part of the design. Before running monolith, `Write` a copy of the input to `artifacts/<name>-nodev.html` with every `[data-dev-only]` script tag removed and run monolith on that copy.
+
+3. Run monolith on the nodev copy:
    ```
-   Bash(monolith --isolate --no-metadata "<input>" -o "<output>")
+   Bash(monolith --isolate --no-metadata "<name>-nodev.html" -o "<output>")
    ```
    The flags come first — the permission grant is the literal prefix `monolith --isolate --no-metadata`. Flags:
    - `--isolate` — CSP to prevent any remote resource loads after bundling
    - `--no-metadata` — strip `<!-- saved from ... -->` metadata
 
-3. Report:
+4. Report:
    - `Bash(stat -f%z "<output>")` or `Bash(ls -la "<output>")` for size
    - "Bundled `<input>` → `<output>` (`<size>` KB). Works offline."
 

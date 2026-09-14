@@ -27,6 +27,7 @@ Mirror of Claude Design's "Handoff" export: a self-describing bundle a developer
    - `Bash(cp artifacts/<path> handoff/<name>/src/<name>.html)`
    - Every `<script src="./x.jsx">` / `.js` sibling the HTML references: `Bash(cp artifacts/<dir>/x.jsx handoff/<name>/src/x.jsx)` (spell each path literally).
    - `Bash(cp .claude/last-preview.png handoff/<name>/reference.png)` if it exists.
+   - Any `<script … data-dev-only>` tag (live reload, editor overlay, sketch pad) is removed from the copy before bundling, and its sibling file is not copied. These are preview-time tools, not part of the design.
 
 4. **Extract components.** `Read` the HTML. For every inline `<script type="text/babel">` block, split top-level `function Foo(...)` / `const Foo = (...) =>` React components into `handoff/<name>/src/components/<Foo>.jsx` via `Write`, each ending with `export default Foo;`. Keep the app entry (`ReactDOM.createRoot(...)`) in `src/App.jsx`. Non-React artifacts (plain decks): skip this step and say so in the README.
 
