@@ -17,9 +17,11 @@ and stop. If the user pasted YAML, use the entries under `# comments.yaml`.
 
 ## Phase 2 — Resolve
 
-For each entry, `Grep -n` `$0` for `data-edit="<target>"` → line number and
-the opening tag. Take the element's first 60 characters of text from the
-source.
+For each entry, `Grep -n` `$0` for the tag-anchored pattern
+`<[a-zA-Z][a-zA-Z0-9-]* data-edit="<target>"` → line number and the opening
+tag. (Never Grep the bare attribute: the `__edits` style block also
+contains `data-edit="<target>"` as a CSS selector and would give the wrong
+line.) Take the element's first 60 characters of text from the source.
 
 ## Report
 
