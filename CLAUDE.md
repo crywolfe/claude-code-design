@@ -29,6 +29,7 @@ For any design task, invoke the matching skill:
 | first time in project / "setup" / "setup deps" | `/doctor` |
 | "use the X design system", "apply brand X", "make X the default", "lock X" | `/use-design-system` |
 | "change the red button", "that card in the hero", element-reference without selector | `/inspect` |
+| "live reload", "auto refresh the preview", "hot reload" | `/live-reload` |
 | "show me an example deck", "I want to see a reference prototype" | `/copy-example` |
 
 For aesthetic direction without brand context, invoke `Skill: frontend-design` if it is installed; otherwise proceed with the taste rules in this file. No third-party plugin is required.

@@ -261,6 +261,7 @@ For refining an artifact after the first `/done`.
 | `/snapshot <html> <label>` | a named version before a big rework, or to go back | Copies to `artifacts/versions/<name>/<ts>-<label>.html` and records label + note in `index.json`. `list` / `restore` (restore snapshots the current state first) |
 | `/inspect "<description>"` | to reference a specific visual element without pointing at source | Uses `.claude/last-snapshot.txt` from `mcp__chrome-devtools__take_snapshot` (accessibility tree with UIDs). Matches description → UID → source location via `id` > `data-*` > unique class > `outerHTML` substring. Replaces Claude Design's `<mentioned-element>` pointer protocol |
 | `/verify-artifact` | a visual QA pass before claiming done | Silent-on-pass. Fresh screenshot + console sweep; vision reads the image and checks Claude Design anti-pattern list (min 24px text on slides, contrast ≥ 4.5:1, no gradient backgrounds, no Inter/Roboto, no AI-slop card patterns, no filler). When `.claude/design-tokens.json` is loaded, also walks computed colors / fonts / radii and reports off-token drift (P1 fonts, P1/P2 colors). Reports P0/P1/P2/P3 with coordinates or element descriptions |
+| `/live-reload <html>` | the preview to refresh itself on every save | Injects `starters/live_reload.js` (`data-dev-only`) which polls the file's `Last-Modified` header over `/serve` and reloads on change. No-ops off `127.0.0.1`; dropped by `/publish`, `/export-standalone`, `/handoff` |
 
 ### Organization
 
