@@ -7,7 +7,7 @@ Step-by-step setup for a fresh machine.
 | | Why |
 |---|---|
 | **macOS 14+** | `open` command, Homebrew (Linux possible with `xdg-open` but untested) |
-| **Claude Code CLI** | Main interface to skills and MCP tools. [Install](https://docs.claude.com/en/docs/agents-and-tools/claude-code). Authenticate with your Anthropic account |
+| **Claude Code CLI** | Main interface to skills and MCP tools. [Install](https://docs.claude.com/en/docs/agents-and-tools/claude-code). Any supported inference provider works: the Anthropic API, Microsoft Foundry, Amazon Bedrock, Google Vertex AI or a gateway, selected by the usual environment flags (see [`docs/enterprise-plugin.md`](./docs/enterprise-plugin.md) §2). A claude.ai login is needed only for `/publish` and `/sync-design-system` |
 | **Node.js ≥ 20** | For `scripts/export-pptx.mjs`, `scripts/export-pdf.mjs`, `scripts/make-assets-index.mjs`. Check: `node --version`. Recommend [nvm](https://github.com/nvm-sh/nvm) |
 | **Homebrew** | Installs `monolith` and optionally `gh`. [brew.sh](https://brew.sh) |
 | **Google Chrome (or Chromium)** | Host for Chrome DevTools MCP. Regular Chrome works; the MCP attaches to it |
@@ -112,7 +112,7 @@ claude-code-design/
 Often CORS on `file://` for external `.jsx` starters. Run `/serve` to start `http://127.0.0.1:4567` (root: `artifacts/`), then `/done http://127.0.0.1:4567/<name>.html`. The `interactive-prototype` / `wireframe` / `animated-video` skills already handle this — but if you wrote HTML manually, switch to the http URL.
 
 **Chrome DevTools MCP won't connect after install.**
-Requires a Claude Code restart after `claude mcp add`. If still failing, fallback: `claude mcp add playwright -s project -- npx @playwright/mcp@<pinned version> --isolated` (ships its own Chromium; pin the version, never `@latest`).
+Requires a Claude Code restart after `claude mcp add`. If it still fails, check that Chrome or Chromium is installed and that `claude mcp list` shows the `chrome-devtools` entry from `.mcp.json`, then run `/doctor` again. Do not substitute a different browser MCP: `.claude/hooks/guard-browser.py` only guards the Chrome DevTools MCP tool names, so another server would run browser navigation and scripts outside the browser-scope rule.
 
 **`/export-pptx` hangs on fonts.**
 The script has a 30s timeout on `waitForFunction` and awaits `document.fonts.ready`. If your deck uses custom fonts from a remote CDN, preload via `<link rel="preload" as="font">` in the artifact head, or convert to base64 data URLs.
