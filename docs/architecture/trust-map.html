@@ -193,7 +193,7 @@
   <div>
     <p class="eyebrow">Claude Code Design · hardened workspace</p>
     <h1>Trust zones and gates of the hardened design workspace</h1>
-    <p class="lede">Five zones, four boundaries. At every crossing the map answers one question: is this call stopped by code that runs before the tool does, or by a rule the model is trusted to keep? That distinction matters more than the zone labels. Code cannot be talked out of a decision. A rule can.</p>
+    <p class="lede">Five zones, four boundaries. At every crossing the map answers one question: is this call stopped by code that runs before the tool does, or by a rule the model is trusted to keep? That distinction matters more than the zone labels. A hook blocks the call regardless of what the prompt says. A rule holds only while the model follows it.</p>
   </div>
   <div class="meta">
     branch <b>claude-design-features</b><br>
@@ -210,7 +210,7 @@
   <span><i class="tag gap">gap</i> confirmed by the code reviewer against the committed hooks</span>
 </div>
 
-<p class="note lead"><b>What the map says.</b> The code boundary is narrow, testable and honest: 287 cases run against it, and the reviewer's bypasses all exploit spellings the rules never looked at, not rules that failed. The policy boundary is wide and rests on the model reading a rule and keeping it, which is a different kind of guarantee. The three critical gaps are one bug in three costumes: every rule was anchored on how a command or path was spelled, and the shell can spell either more ways than a regex can list. That is why the patch stops matching spellings and starts normalising: a positive command allowlist, path normalisation, and a flat ban on ANSI-C quoting. And the map shows the committed hooks, not the patched ones, because the patch has never been run, and a map of unrun code is fiction.</p>
+<p class="note lead"><b>What the map says.</b> The code boundary is narrow and tested: 287 cases run against it, and every bypass the reviewer found uses a spelling the rules never checked, not a rule that failed. The policy boundary is wide and depends on the model reading a rule and following it, which no code verifies. The three critical gaps share one cause: every rule matched on how a command or path was spelled, and the shell accepts more spellings than a regex can list. The patch replaces spelling checks with normalisation: a positive command allowlist, path normalisation, and a ban on ANSI-C quoting. The map shows the committed hooks, not the patched ones, because the patch has never been run. To close the critical gaps, run the patched self-test from the user's shell, confirm it passes, then copy the patched hooks over the committed ones.</p>
 
 <div class="schematic">
 <div class="zones">
@@ -222,7 +222,7 @@
       <p>The one place that can change the rules.</p>
     </header>
     <ul>
-      <li><b>Owns the rulebook</b><span class="p">.claude/settings.json · .claude/hooks/* · .mcp.json · scripts/*</span></li>
+      <li><b>Owns the hook and settings files</b><span class="p">.claude/settings.json · .claude/hooks/* · .mcp.json · scripts/*</span></li>
       <li><b>Switches branches, pushes, forks</b><span class="p">checkout · rebase · fork · push</span></li>
       <li><b>Installs what the agent cannot</b><span class="p">puppeteer · pptxgenjs · monolith · gitleaks</span></li>
       <li><b>Applies the hardening patch</b>, once the self-test passes<span class="p">bash .claude/hooks/test-guard.sh</span></li>
@@ -261,7 +261,7 @@
     <header>
       <div class="lvl">Boundary · code</div>
       <h3>Hooks and deny list</h3>
-      <p>Deny beats any grant. Hooks are re-read on every call, so there is nothing to poison.</p>
+      <p>A deny overrides any grant. Hooks are re-read from disk on every call, so a session cannot alter them in memory.</p>
     </header>
     <ul>
       <li><b>settings.json deny list</b><span class="p">Write/Edit: .claude/hooks/** · settings*.json · .mcp.json · scripts/** · .git/**<br>Read: ~/.claude/** (side effect: auto-memory is off)<br>Bash: destructive, network and pipe-to-shell patterns</span></li>
@@ -322,7 +322,7 @@
 </div>
 
 <h2>Crossings and their gates</h2>
-<p class="h2sub">Eight of the eleven crossings below have code behind them. Three rest on the model alone: publish, comments and design-system sync, and all three face claude.ai. Where the only enforcer is policy, the model is the control, so read those rows as promises, not proofs.</p>
+<p class="h2sub">Eight of the eleven crossings below have code behind them. Three rest on the model alone: publish, comments and design-system sync, and all three face claude.ai. Where the only enforcer is policy, the model is the control, so those rows describe expected behaviour, not enforced behaviour.</p>
 <div class="tw">
 <table>
   <thead><tr><th>Flow</th><th>Route</th><th>Gate</th><th>Checked by</th></tr></thead>
@@ -336,7 +336,7 @@
     <tr><td class="flow">Publish</td><td class="route">artifacts/publish/&lt;copy&gt; → claude.ai, private page</td><td>The user asks. The file was read this session. A self-contained copy goes up, unpkg rewritten to jsdelivr with the same SRI hash, and no runtime capabilities.</td><td class="enf"><span class="tag pol">policy</span></td></tr>
     <tr><td class="flow">Comments</td><td class="route">claude.ai → session</td><td>Read on request. Quoted to the user, never followed.</td><td class="enf"><span class="tag pol">policy</span></td></tr>
     <tr><td class="flow">Design-system sync</td><td class="route">design-systems/&lt;name&gt;/ → Claude Design project</td><td>List, plan, approve, write, one component at a time. Never a wholesale replace. Nobody has run this flow end to end yet.</td><td class="enf"><span class="tag pol">policy</span></td></tr>
-    <tr><td class="flow">Self-protection</td><td class="route">session → hooks · settings · .mcp.json · scripts/</td><td>Write and Edit denied. <code>cp</code> / <code>mv</code> onto them denied. <code>sed -i</code>, <code>tee</code> and file redirects denied. The rulebook cannot rewrite itself.</td><td class="enf"><span class="tag deny">deny list</span><span class="tag hook">guard-bash</span><span class="tag gap">gap G-05</span></td></tr>
+    <tr><td class="flow">Self-protection</td><td class="route">session → hooks · settings · .mcp.json · scripts/</td><td>Write and Edit denied. <code>cp</code> / <code>mv</code> onto them denied. <code>sed -i</code>, <code>tee</code> and file redirects denied. The session cannot modify its own guards.</td><td class="enf"><span class="tag deny">deny list</span><span class="tag hook">guard-bash</span><span class="tag gap">gap G-05</span></td></tr>
     <tr><td class="flow">Secrets</td><td class="route">environment · dotfiles → anywhere</td><td>No <code>~/.ssh</code>, <code>~/.aws</code>, <code>~/.claude</code>, <code>.env</code>, <code>*.pem</code> paths. No <code>echo $TOKEN</code>-shaped commands.</td><td class="enf"><span class="tag hook">guard-bash</span><span class="tag deny">deny list</span></td></tr>
   </tbody>
 </table>
@@ -348,24 +348,24 @@
 <table class="register">
   <thead><tr><th>ID</th><th>Finding</th><th>Severity</th><th>Status</th></tr></thead>
   <tbody>
-    <tr><td class="id">G-01</td><td>Quote the command name (<code>"perl" -zzz</code>, <code>pe'r'l</code>) and every name-anchored rule looks straight past it. The shell strips the quotes; the regex never did.</td><td class="sev sev-crit"><span class="sev-dot"></span>Critical</td><td><span class="tag pend">patch pending</span></td></tr>
+    <tr><td class="id">G-01</td><td>Quote the command name (<code>"perl" -zzz</code>, <code>pe'r'l</code>) and no name-anchored rule matches. The shell strips the quotes before running the command; the regex does not.</td><td class="sev sev-crit"><span class="sev-dot"></span>Critical</td><td><span class="tag pend">patch pending</span></td></tr>
     <tr><td class="id">G-02</td><td>A <code>./</code> or <code>//</code> prefix turns a protected path into a string the protected-file list does not recognise. Same file, different spelling.</td><td class="sev sev-crit"><span class="sev-dot"></span>Critical</td><td><span class="tag pend">patch pending</span></td></tr>
     <tr><td class="id">G-03</td><td>ANSI-C quoting (<code>$'\x2e\x2e'</code>) hides <code>..</code> and absolute paths inside byte escapes the guard never decodes.</td><td class="sev sev-crit"><span class="sev-dot"></span>Critical</td><td><span class="tag pend">patch pending</span></td></tr>
     <tr><td class="id">G-04</td><td>Readers (<code>cat</code>, <code>head</code>, <code>rg</code>, …) can read any non-dotfile path on the machine. The dotfile rule protects credentials, not the rest of the home directory.</td><td class="sev sev-imp"><span class="sev-dot"></span>Important</td><td><span class="tag pend">patch pending</span></td></tr>
     <tr><td class="id">G-05</td><td><code>git checkout &lt;sha&gt; -- .</code> or <code>git reset --hard</code> restores an older, weaker hook, and the guard trusts whichever hook is on disk.</td><td class="sev sev-imp"><span class="sev-dot"></span>Important</td><td><span class="tag pend">patch pending</span></td></tr>
-    <tr><td class="id">G-06</td><td>The <code>evaluate_script</code> filter is a text denylist, and <code>window["fe"+"tch"]</code> walks past it. No denylist enumerates JavaScript.</td><td class="sev sev-imp"><span class="sev-dot"></span>Important</td><td><span class="tag pend">patch pending</span></td></tr>
-    <tr><td class="id">G-07</td><td>False positives: <code>2&gt;&amp;1</code> inside a pipeline and <code>which node</code> are blocked, so <code>/doctor</code> and both export preflights fail. A guard that breaks the documented workflow invites workarounds.</td><td class="sev sev-imp"><span class="sev-dot"></span>Important</td><td><span class="tag pend">patch pending</span></td></tr>
-    <tr><td class="id">G-08</td><td>The <code>Bash(rm -rf /*)</code> deny also matches the documented <code>rm -rf /tmp/cd-ingest-…</code> cleanup, per the reviewer, so ingest cannot tidy up after itself.</td><td class="sev sev-imp"><span class="sev-dot"></span>Important</td><td><span class="tag pend">manual settings edit</span></td></tr>
-    <tr><td class="id">G-09</td><td><code>[^\n]</code> in two regexes meant "not backslash, not n" rather than "not newline". A typo, not a hole, but a typo in a security regex.</td><td class="sev sev-min"><span class="sev-dot"></span>Minor</td><td><span class="tag pend">patch pending</span></td></tr>
-    <tr><td class="id">R-01</td><td>The <code>evaluate_script</code> filter stays best-effort after the patch. The real boundary is the URL scope: the browser only ever loads pages this repo generated, so a script that slips the filter runs against our own page.</td><td class="sev sev-res"><span class="sev-dot"></span>Residual</td><td><span class="tag deny">accepted</span></td></tr>
+    <tr><td class="id">G-06</td><td>The <code>evaluate_script</code> filter is a text denylist, and <code>window["fe"+"tch"]</code> is not matched. A denylist cannot list every way JavaScript can express a call.</td><td class="sev sev-imp"><span class="sev-dot"></span>Important</td><td><span class="tag pend">patch pending</span></td></tr>
+    <tr><td class="id">G-07</td><td>False positives: <code>2&gt;&amp;1</code> inside a pipeline and <code>which node</code> are blocked, so <code>/doctor</code> and both export preflights fail. A guard that blocks the documented workflow pushes users to work around it.</td><td class="sev sev-imp"><span class="sev-dot"></span>Important</td><td><span class="tag pend">patch pending</span></td></tr>
+    <tr><td class="id">G-08</td><td>The <code>Bash(rm -rf /*)</code> deny also matches the documented <code>rm -rf /tmp/cd-ingest-…</code> cleanup, per the reviewer, so ingest cannot delete its scratch directory.</td><td class="sev sev-imp"><span class="sev-dot"></span>Important</td><td><span class="tag pend">manual settings edit</span></td></tr>
+    <tr><td class="id">G-09</td><td><code>[^\n]</code> in two regexes meant "not backslash, not n" rather than "not newline". Not exploitable, but it sits in a security regex and should be corrected.</td><td class="sev sev-min"><span class="sev-dot"></span>Minor</td><td><span class="tag pend">patch pending</span></td></tr>
+    <tr><td class="id">R-01</td><td>The <code>evaluate_script</code> filter stays best-effort after the patch. The real boundary is the URL scope: the browser only ever loads pages this repo generated, so a script the filter misses runs against a page this repo wrote.</td><td class="sev sev-res"><span class="sev-dot"></span>Residual</td><td><span class="tag deny">accepted</span></td></tr>
     <tr><td class="id">R-02</td><td>The browser hook matches three tools. <code>click</code>, <code>fill_form</code> and <code>upload_file</code> are ungated, and no skill asks for them. Unguarded, and so far unused.</td><td class="sev sev-res"><span class="sev-dot"></span>Residual</td><td><span class="tag deny">accepted</span></td></tr>
     <tr><td class="id">R-03</td><td>Every policy-only crossing depends on the model. Prompt injection through ingested content is contained, not detected: a hijacked session can still only do what the hooks allow.</td><td class="sev sev-res"><span class="sev-dot"></span>Residual</td><td><span class="tag deny">by design</span></td></tr>
-    <tr><td class="id">R-04</td><td>The guard reads raw command text, so prose with a command name, a backtick, <code>..</code> or <code>&gt;</code> in it is blocked. While revising this page, a search for the literal string <code>&lt;title&gt;</code> was refused as a redirect. A usability cost, not a hole.</td><td class="sev sev-res"><span class="sev-dot"></span>Residual</td><td><span class="tag deny">by design</span></td></tr>
-    <tr><td class="id">R-05</td><td>Hooks and settings are tracked files, so switching branches is the user's job, from their own shell. Until the patch lands, G-05 is the hole in that rule.</td><td class="sev sev-res"><span class="sev-dot"></span>Residual</td><td><span class="tag deny">by design</span></td></tr>
+    <tr><td class="id">R-04</td><td>The guard reads raw command text, so prose with a command name, a backtick, <code>..</code> or <code>&gt;</code> in it is blocked. While revising this page, a search for the literal string <code>&lt;title&gt;</code> was refused as a redirect. A usability cost, not a security gap. Use the Read or Grep tool for such text.</td><td class="sev sev-res"><span class="sev-dot"></span>Residual</td><td><span class="tag deny">by design</span></td></tr>
+    <tr><td class="id">R-05</td><td>Hooks and settings are tracked files, so switching branches is the user's job, from their own shell. Until the patch is applied, G-05 lets a session bypass that rule.</td><td class="sev sev-res"><span class="sev-dot"></span>Residual</td><td><span class="tag deny">by design</span></td></tr>
   </tbody>
 </table>
 </div>
-<p class="note">Once someone runs the patch: the command word must be on a positive allowlist and <code>cd</code> is not on it, readers only see the project and the ingest scratch, git can no longer rewrite the tree except through <code>checkout -b</code> and <code>switch -c</code>, and the browser filter also catches computed property access, <code>eval</code>, string timers and <code>.click()</code>. The patch README says its self-test has 384 cases. That number is the README's, not this page's: nobody has run it yet, and it has to pass before the copy replaces the committed hooks.</p>
+<p class="note">After the patch is applied: the command word must be on a positive allowlist and <code>cd</code> is not on it, readers only see the project and the ingest scratch, git can no longer rewrite the tree except through <code>checkout -b</code> and <code>switch -c</code>, and the browser filter also catches computed property access, <code>eval</code>, string timers and <code>.click()</code>. The patch README says its self-test has 384 cases. That number is the README's, not this page's: nobody has run it yet, and it has to pass before the copy replaces the committed hooks.</p>
 
 <p class="foot">Source of truth: CLAUDE.md · .claude/settings.json · .claude/hooks/guard-bash.sh · .claude/hooks/guard-browser.py · .claude/hooks/test-guard.sh · artifacts/hardening-patch/README.md</p>
 
