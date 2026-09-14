@@ -210,7 +210,7 @@
   <span><i class="tag gap">gap</i> confirmed by the code reviewer against the committed hooks</span>
 </div>
 
-<p class="note lead"><b>What the map says.</b> The code boundary is narrow and tested: 287 cases run against it, and every bypass the reviewer found uses a spelling the rules never checked, not a rule that failed. The policy boundary is wide and depends on the model reading a rule and following it, which no code verifies. The three critical gaps share one cause: every rule matched on how a command or path was spelled, and the shell accepts more spellings than a regex can list. The patch replaces spelling checks with normalisation: a positive command allowlist, path normalisation, and a ban on ANSI-C quoting. The map shows the committed hooks, not the patched ones, because the patch has never been run. To close the critical gaps, run the patched self-test from the user's shell, confirm it passes, then copy the patched hooks over the committed ones.</p>
+<p class="note lead"><b>What the map says.</b> The hooks are tested by 287 cases. Every bypass the reviewer found spells a command or path in a way the regexes do not recognise. The policy rules work only if the model follows them. No code checks that it did. The three critical gaps have the same cause. The guard matches on spelling, and the shell accepts more spellings than the guard checks. The patch normalises each command before checking it. It adds a command allowlist, normalises paths, and rejects ANSI-C quoting. This map shows the committed hooks because the patch has not been run. To apply it, run the patched self-test from the user's shell. If it passes, copy the patched hooks over the committed ones.</p>
 
 <div class="schematic">
 <div class="zones">
