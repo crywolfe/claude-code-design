@@ -30,8 +30,8 @@ From `$ARGUMENTS`:
 
 3. **Upsert entry:**
    - Key on (asset, path) pair
-   - If exists → update fields + thumbnail + bump `updated_at`
-   - If new → append
+   - If exists → refresh `thumbnail` and bump `updated_at`. With `--auto` (the `/done` path) change nothing else: `status`, `subtitle`, `group`, `registered_at` and any `published_*` fields stay as they were, so a re-run of `/done` never resets an approved asset to `needs-review`. Without `--auto`, an explicit `--status` / `--subtitle` / `--group` argument overrides the stored value
+   - If new → append with the given or default `status` / `subtitle` / `group`
 
    Schema:
    ```json

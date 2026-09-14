@@ -37,9 +37,9 @@ In the first turn, run:
 
 `/doctor` performs:
 
-1. Inventory: `claude mcp list` → checks Chrome DevTools MCP; `which monolith`, `node --version`, `which gh` (the guard blocks `which node`); tests project structure
-2. Repair: prints the install commands for missing pieces (`claude mcp add chrome-devtools -s project -- npx chrome-devtools-mcp@1.9.0 --isolated`, `brew install monolith`, `npm install -D pptxgenjs@4.0.1 puppeteer@24.41.0`) — **you run them in a separate shell**; the agent never installs software
-3. Smoke test: creates a tiny `test/smoke-deck.html`, runs `/done` on it, reports pass/fail
+1. Inventory: `claude mcp list` → checks Chrome DevTools MCP; `which monolith`, `node --version`, `which gh` (the guard blocks `which node`); `ls -d node_modules/puppeteer` and `ls -d node_modules/pptxgenjs` for the export dependencies; lists the project structure
+2. Repair: prints the install commands for missing pieces (`claude mcp add chrome-devtools -s project -- npx chrome-devtools-mcp@1.9.0 --isolated`, `brew install monolith`, `npm install -D pptxgenjs@4.0.1 puppeteer@24.41.0`) — **you run them in a separate shell**; the agent never installs software. A fresh clone has no `node_modules/`, so `/export-pdf` and `/export-pptx` stop at their preflight until you have run the `npm install` line
+3. Smoke test: runs `/done` on the versioned `test/smoke-deck.html`, reports pass/fail
 4. Prints a skill cheat-sheet
 
 If something in step 1 is already installed, `/doctor` skips the corresponding install. Safe to run multiple times.
@@ -113,6 +113,19 @@ Often CORS on `file://` for external `.jsx` starters. Run `/serve` to start `htt
 
 **Chrome DevTools MCP won't connect after install.**
 Requires a Claude Code restart after `claude mcp add`. If it still fails, check that Chrome or Chromium is installed and that `claude mcp list` shows the `chrome-devtools` entry from `.mcp.json`, then run `/doctor` again. Do not substitute a different browser MCP: `.claude/hooks/guard-browser.py` only guards the Chrome DevTools MCP tool names, so another server would run browser navigation and scripts outside the browser-scope rule.
+
+**`/export-pdf` or `/export-pptx` fails with `Failed to launch the browser process` and a `dlopen … Google Chrome for Testing Framework … no such file` message.**
+The Chrome for Testing build that `npm install` downloaded into `~/.cache/puppeteer/chrome/<version>/` is incomplete. Puppeteer's zip extraction stopped before the `Frameworks` folder and left the `.zip` next to the folder; the archive itself is usually fine. Re-downloading with `npx puppeteer browsers install chrome` can fail the same way, so extract the archive yourself in a separate shell:
+
+```bash
+cd ~/.cache/puppeteer/chrome
+rm -rf mac_arm-<version>
+mkdir mac_arm-<version>
+unzip -q <version>-chrome-mac-arm64.zip -d mac_arm-<version>
+ls "mac_arm-<version>/chrome-mac-arm64/Google Chrome for Testing.app/Contents"
+```
+
+The last line should list `Frameworks`, `Info.plist`, `MacOS`, `PkgInfo` and `Resources`. Then delete the zip and retry the export. The agent cannot repair this itself: `rm` outside `/tmp/cd-ingest-*`, `npx` and `unzip` to disk are all blocked by the guard.
 
 **`/export-pptx` hangs on fonts.**
 The script has a 30s timeout on `waitForFunction` and awaits `document.fonts.ready`. If your deck uses custom fonts from a remote CDN, preload via `<link rel="preload" as="font">` in the artifact head, or convert to base64 data URLs.

@@ -21,5 +21,5 @@ Preview the HTML file or URL at `$0` in the user's browser and navigate the Chro
 3. Open in default browser. The command must begin with the literal `open file://` or `open http://127.0.0.1:` — quote only the part after the scheme so the permission prefix still matches paths with spaces:
    - `Bash(open file://"<abs>?v=<epoch>")` (macOS) or `Bash(xdg-open file://"<abs>?v=<epoch>")` (linux)
    - `Bash(open http://127.0.0.1:<port>/<path>?v=<epoch>)`
-4. Navigate Chrome DevTools MCP: `mcp__chrome-devtools__navigate_page({url: "<url>", type: "url"})` — the fresh `?v=` query forces a network fetch even if the tab was previously loaded.
+4. Navigate Chrome DevTools MCP: `mcp__chrome-devtools__navigate_page({pageId, url: "<url>", type: "url"})` — the fresh `?v=` query forces a network fetch even if the tab was previously loaded. `pageId` is required by every page-scoped tool in `chrome-devtools-mcp@1.9.0` (`navigate_page`, `evaluate_script`, `take_screenshot`, `take_snapshot`, `list_console_messages`): call `mcp__chrome-devtools__list_pages` once and reuse the id of the artifact tab; if no tab exists yet, `mcp__chrome-devtools__new_page({url})` creates one.
 5. Report: preview is live; screenshots and console inspection now work via the MCP session

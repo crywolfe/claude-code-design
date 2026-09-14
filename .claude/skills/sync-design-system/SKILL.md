@@ -11,7 +11,7 @@ The bridge from this terminal workflow to Claude Design proper: the local regist
 
 ## Phase 0 — Validate
 
-- `$0` must be a plain folder name (`[A-Za-z0-9_-]+`, no `/` or `..`). `Bash(test -d design-systems/$0)` must exit 0.
+- `$0` must be a plain folder name (`[A-Za-z0-9_-]+`, no `/` or `..`). `Bash(ls design-systems/$0)` must print a listing that includes `tokens.json`; `No such file or directory` means the entry is missing, so stop and show `Bash(ls design-systems)`. Use `ls`, not `test -d`: a failing `test` prints nothing and its exit code is not shown in the tool result.
 - `Read design-systems/$0/tokens.json` and, if present, `manifest.json`. A `locked: true` manifest means: sync is allowed (it is a push), but say so.
 - The `DesignSync` tool must be available. If it is not, stop and tell the user this build of Claude Code has no Claude Design connector; `/handoff` is the offline alternative.
 

@@ -25,8 +25,8 @@ Each registry entry may carry `design-systems/<name>/manifest.json`:
 1. If `$0` (name) is missing → `Bash(ls design-systems/ 2>/dev/null)`; `Read` each `manifest.json` that exists; if exactly one has `default: true`, use it and say so. Otherwise show the list (marking default / locked) and ask which one. `$0` must be a plain folder name (letters, digits, `-`, `_`) — reject anything containing `/` or `..`.
 
 2. Verify the folder exists:
-   `Bash(test -d design-systems/$0)` — exit code 0 = ok.
-   If missing → tell the user, list what's available, stop.
+   `Bash(ls design-systems/$0)` — a listing that includes `tokens.json` means ok; `No such file or directory` means missing. Use `ls`, not `test -d`: a failing `test` prints nothing and its exit code is not shown in the tool result.
+   If missing → tell the user, list what's available (`Bash(ls design-systems)`), stop.
 
 3. Read the tokens file:
    `Read design-systems/$0/tokens.json`

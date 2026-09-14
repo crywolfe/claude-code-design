@@ -67,11 +67,23 @@
             height: ${h}px;
             box-sizing: border-box;
             overflow: hidden;
+            position: relative;
           }
           /* Hide non-active with !important so light-DOM styles
              on the section itself can still define display type (flex, grid, etc.)
-             on the active one. */
-          ::slotted(section:not(.active)) { display: none !important; }
+             on the active one. Screen only: an !important rule inside the shadow
+             root beats every light-DOM rule, so the global print stylesheet could
+             never show the other slides and a PDF export came out as one page. */
+          @media not print {
+            ::slotted(section:not(.active)) { display: none !important; }
+          }
+          /* Print: stack every slide at natural size so the global print
+             stylesheet's break-after rules yield one page per section. */
+          @media print {
+            :host, :host([noscale]) { width: ${w}px; height: auto; overflow: visible; background: transparent; }
+            .deck-canvas { position: static; height: auto; transform: none !important; }
+            .deck-overlay, .deck-nav-hit { display: none !important; }
+          }
           .deck-overlay {
             position: fixed;
             bottom: 16px; right: 20px;

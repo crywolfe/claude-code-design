@@ -2,7 +2,7 @@
 name: ingest-document
 description: Extract design tokens (theme colors, fonts) and outline text from a PPTX, DOCX, XLSX or PDF the user provides, so a deck or design system can be rooted in an existing document. Use when user says "from this deck", "match our slides", "use this brand PDF", or gives a .pptx/.docx/.xlsx/.pdf path.
 argument-hint: <path-to-document>
-allowed-tools: Read Write Bash(unzip -l:*) Bash(unzip -p:*) Bash(head -c:*) Bash(mkdir -p artifacts/ingested) Bash(date:*) Bash(test:*)
+allowed-tools: Read Write Bash(unzip -l:*) Bash(unzip -p:*) Bash(head -c:*) Bash(mkdir -p artifacts/ingested) Bash(date:*) Bash(test:*) Bash(ls:*)
 ---
 
 # Ingest Document
@@ -22,7 +22,7 @@ The path must be the one the user gave **in this turn**. Ask once: "Read `<file>
 
 ## Step 1 — Inspect (read-only)
 
-- `Bash(test -f "<path>")` — exit 0 required.
+- `Bash(ls "<path>")` — the path printed back means the file exists; `No such file or directory` means stop and ask for the right path. Use `ls`, not `test -f`: a failing `test` prints nothing and its exit code is not shown in the tool result.
 - `Bash(unzip -l "<path>")` — confirm it is a zip and the expected theme path is present. Never `unzip` to disk; only `-l` and `-p` are permitted (the bash guard enforces this).
 - PDF: skip to Step 3.
 

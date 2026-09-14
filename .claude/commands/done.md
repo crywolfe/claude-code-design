@@ -45,8 +45,8 @@ End-of-turn gate: make sure the artifact at `$0` opens cleanly, capture evidence
    - Include a screenshot reference in end-of-turn summary so Claude and user see the same frame.
 
 8. **Auto-register** (H1): if `$0` is a local path (not an http URL) AND it lives under `artifacts/`:
-   - Check `design-assets.json` — if this path is already registered, skip
-   - Otherwise invoke `Skill: register-asset` with:
+   - Invoke `Skill: register-asset` whether or not the path is already in `design-assets.json`: it upserts, so a re-run refreshes the thumbnail and `updated_at` and leaves `registered_at`, `status`, `subtitle` and any `published_*` fields as they were.
+   - Pass:
      - `path = $0`
      - `asset = <Title-Cased slug of basename without extension>`
      - `group = <infer from artifact>`:

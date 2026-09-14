@@ -2,7 +2,7 @@
 name: ingest-figma
 description: Pull design tokens + frame structure from a Figma URL via the Figma REST API. Requires FIGMA_TOKEN env var.
 argument-hint: <figma-url>
-allowed-tools: Read Write Bash(curl https://api.figma.com/v1/files/:*) Bash(mkdir -p artifacts/ingested) Bash(test:*) Bash(realpath:*)
+allowed-tools: Read Write Bash(curl https://api.figma.com/v1/files/:*) Bash(mkdir -p artifacts/ingested) Bash(test:*) Bash(echo FIGMA_TOKEN-present) Bash(realpath:*)
 ---
 
 # Ingest Figma
@@ -11,8 +11,8 @@ Extract design system from a Figma file using the REST API. Falls back to SVG-im
 
 ## Preflight
 
-1. `Bash(test -n "$FIGMA_TOKEN")` — exit code 0 means the token is set. Never echo or print the token.
-2. If the exit code is non-zero (no token):
+1. `Bash(test -n "$FIGMA_TOKEN" && echo FIGMA_TOKEN-present)` — prints `FIGMA_TOKEN-present` when the token is set and nothing when it is not. Use this form, not a bare `test -n`: a failing `test` prints nothing and its exit code is not visible in the tool result, so "no output" would read as a pass. The literal echo never prints the value; the guard blocks `echo $FIGMA_TOKEN` and the word `set`, so do not vary the marker text.
+2. If nothing was printed (no token):
    - Tell user: "No `FIGMA_TOKEN` found. Two options: (a) Get a token at https://www.figma.com/developers/api#access-tokens and `export FIGMA_TOKEN=...` in your shell, or (b) export the frame as SVG in Figma (Right-click frame → Copy as → Copy as SVG) and paste the file to `artifacts/ingested/` — I'll parse the SVG."
    - Stop; wait for user response.
 

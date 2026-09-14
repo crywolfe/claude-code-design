@@ -2,7 +2,7 @@
 name: export-pdf
 description: Export an HTML artifact to PDF via headless Chromium (puppeteer Page.pdf). For multi-slide decks one page per <section>.
 argument-hint: <html-path> [output.pdf]
-allowed-tools: Read Write Bash(node scripts/export-pdf.mjs:*) Bash(realpath:*) Bash(mkdir -p:*) Bash(which:*) Bash(test:*) Bash(stat:*) Bash(ls:*)
+allowed-tools: Read Write Bash(node scripts/export-pdf.mjs:*) Bash(node --version) Bash(realpath:*) Bash(mkdir -p:*) Bash(which:*) Bash(test:*) Bash(stat:*) Bash(ls:*)
 ---
 
 # Export PDF
@@ -14,7 +14,7 @@ Produce a PDF from an HTML artifact. Uses puppeteer's `Page.pdf()` which is loss
 ## Preflight
 
 1. `Bash(node --version)` — required (`which node` is blocked by the guard)
-2. `Bash(test -d node_modules/puppeteer)` — if the exit code is non-zero, tell the user to run `npm install -D puppeteer@24.41.0` in a separate shell (or `/doctor` for the full list), and stop
+2. `Bash(ls -d node_modules/puppeteer)` — if it prints `No such file or directory`, tell the user to run `npm install -D puppeteer@24.41.0` in a separate shell (or `/doctor` for the full list), and stop. Do not use `test -d` here: it prints nothing on failure and the exit code is not visible in the tool result, so a missing install reads as a pass and the script then dies on `import puppeteer` with a bare Node stack trace
 
 ## Steps
 
@@ -34,7 +34,7 @@ Produce a PDF from an HTML artifact. Uses puppeteer's `Page.pdf()` which is loss
 ## Script behaviour (scripts/export-pdf.mjs)
 
 - Launches headless Chromium without `--no-sandbox` (only added when `CI` is set)
-- Blocks every outbound request except the artifact's own directory over `file://`, `data:`, `blob:`, `https://unpkg.com/` and Google Fonts; DNS for every other host is disabled (`--host-resolver-rules`, which also covers WebSockets) and popups are closed — an artifact cannot phone home during export. A copy from `artifacts/publish/` (rewritten to jsdelivr) will not export; export the source artifact instead
+- Blocks every outbound request except the artifact's own directory over `file://`, `data:`, `blob:`, `https://unpkg.com/` and Google Fonts. A deck that loads `../starters/deck_stage.js` instead of a copy beside the HTML therefore exports with the stage script blocked: the sections never become slides and the PDF is one page of stacked content. `test/smoke-deck.html` is such a file and is not an export target; real decks get the starter copied next to them by `make-deck`; DNS for every other host is disabled (`--host-resolver-rules`, which also covers WebSockets) and popups are closed — an artifact cannot phone home during export. A copy from `artifacts/publish/` (rewritten to jsdelivr) will not export; export the source artifact instead
 - Decks render one `<section>` per page at natural size; other pages default to A4
 
 ## Notes

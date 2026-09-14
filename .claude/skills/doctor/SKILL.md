@@ -1,7 +1,7 @@
 ---
 name: doctor
 description: First-run health check. Verifies Chrome DevTools MCP and optional deps (monolith, pptxgenjs, puppeteer), prints the install commands for the user to run, creates working dirs, runs smoke test. Use on fresh clone or when things feel broken.
-allowed-tools: Read Write Bash(claude mcp list) Bash(which:*) Bash(mkdir -p artifacts:*) Bash(ls:*) Bash(test:*) mcp__chrome-devtools__list_pages mcp__chrome-devtools__take_screenshot
+allowed-tools: Read Write Bash(claude mcp list) Bash(which:*) Bash(node --version) Bash(mkdir -p artifacts:*) Bash(ls:*) Bash(test:*) Bash(echo FIGMA_TOKEN-present) mcp__chrome-devtools__list_pages mcp__chrome-devtools__take_screenshot
 ---
 
 # Doctor
@@ -16,11 +16,16 @@ Run in parallel where possible:
 2. `Bash(which monolith)` — existence check
 3. `Bash(node --version)` — required (`which node` is blocked by the guard; `node --version` is the allowed form and prints the version for the report)
 4. `Bash(which gh)` — for `/ingest-github`
-5. `Bash(test -f package.json)` — exit 0 = exists
-6. `Bash(test -d starters)` — expect exit 0
-7. `Bash(test -d artifacts)`
-8. `Bash(test -d .claude/skills)` — expect exit 0
-9. `Bash(test -d node_modules/puppeteer)` and `Bash(test -d node_modules/pptxgenjs)`
+5. `Bash(ls package.json)` — prints the name when it exists, an error when it does not
+6. `Bash(ls -d starters)` — expect the path printed
+7. `Bash(ls -d artifacts)`
+8. `Bash(ls .claude/skills)` — one line per skill; count them for the report
+9. `Bash(ls -d node_modules/puppeteer)` and `Bash(ls -d node_modules/pptxgenjs)` — the path printed means installed; `No such file or directory` means missing
+10. `Bash(test -n "$FIGMA_TOKEN" && echo FIGMA_TOKEN-present)` — prints `FIGMA_TOKEN-present` when set, exits 1 with no output when not. This form never prints the value; the guard blocks `echo $FIGMA_TOKEN`
+
+Use `ls`, not `test`, for every existence check. A failing `test -d` prints nothing and its non-zero
+exit code is not shown in the tool result, so a missing dependency reads as a pass and the export
+scripts then crash on `import puppeteer`. `ls` always prints something you can read.
 
 ## Phase 2 — Report
 
@@ -31,6 +36,8 @@ Chrome DevTools MCP: ✓ / ✗ (if ✗, show install command)
 monolith CLI:        ✓ / ✗ (optional; needed for /export-standalone)
 Node:                ✓ / ✗ (required)
 gh CLI:              ✓ / ✗ (needed for /ingest-github)
+puppeteer:           ✓ / ✗ (needed for /export-pdf and /export-pptx)
+pptxgenjs:           ✓ / ✗ (needed for /export-pptx)
 package.json:        exists / missing
 starters/ dir:       exists / missing
 artifacts/ dir:      will create
@@ -56,8 +63,8 @@ The only repair this skill performs itself: `Bash(mkdir -p artifacts assets/thum
 
 ## Phase 4 — Smoke test
 
-If everything is green (and user didn't just run install → restart):
-1. Write `test/smoke-deck.html`:
+Run it whenever Chrome DevTools MCP is connected; the optional dependencies (monolith, puppeteer, pptxgenjs) are not needed for the smoke deck, so a missing export dependency does not skip this phase.
+1. `test/smoke-deck.html` is versioned in the repo. Only if `Bash(ls test/smoke-deck.html)` reports it missing, write this minimal one:
    ```html
    <!doctype html>
    <html><head><meta charset="utf-8"/><title>Smoke</title>
