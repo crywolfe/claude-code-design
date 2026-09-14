@@ -210,7 +210,7 @@
   <span><i class="tag gap">gap</i> confirmed by the code reviewer against the committed hooks</span>
 </div>
 
-<p class="note lead"><b>What the map says.</b> The hooks are tested by 287 cases. Every bypass the reviewer found spells a command or path in a way the regexes do not recognise. The policy rules work only if the model follows them. No code checks that it did. The three critical gaps have the same cause. The guard matches on spelling, and the shell accepts more spellings than the guard checks. The patch normalises each command before checking it. It adds a command allowlist, normalises paths, and rejects ANSI-C quoting. This map shows the committed hooks because the patch has not been run. To apply it, run the patched self-test from the user's shell. If it passes, copy the patched hooks over the committed ones.</p>
+<p class="note lead"><b>How a call moves through the map.</b> A prompt enters from the user's shell. The session picks a skill and issues a tool call. Before the tool runs, the deny list and the PreToolUse hooks check the call and block anything outside the allowed forms. An allowed call can reach only the writable tree, a local server on 127.0.0.1, an isolated Chrome, and local git. Anything returned from outside the machine is treated as data. Controls marked policy are not checked by code.</p>
 
 <div class="schematic">
 <div class="zones">
