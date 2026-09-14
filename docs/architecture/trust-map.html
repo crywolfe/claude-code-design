@@ -1,0 +1,371 @@
+<title>Claude Code Design Trust Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    color-scheme: light;
+    --ground: #eef1ef;
+    --paper: #f8faf9;
+    --paper-2: #e4e9e7;
+    --ink: #17201f;
+    --ink-2: #4a5654;
+    --ink-3: #74807e;
+    --rule: #c7d0cd;
+    --rule-2: #dfe5e3;
+    --grid: rgba(23,32,31,0.055);
+    --accent: #0f6e56;
+    --accent-ink: #0b5443;
+    --accent-bg: #dcefe7;
+    --policy: #8a6a1e;
+    --policy-bg: #f3ead2;
+    --threat: #b3382e;
+    --threat-bg: #f6dfdc;
+    --zone-trusted: #0f6e56;
+    --zone-session: #35597a;
+    --zone-enforce: #17201f;
+    --zone-local: #5a6b66;
+    --zone-external: #b3382e;
+    --display: "Schibsted Grotesk", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --body: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ground: #131817;
+      --paper: #1b2120;
+      --paper-2: #232b29;
+      --ink: #e7ecea;
+      --ink-2: #b4bfbc;
+      --ink-3: #85918e;
+      --rule: #364240;
+      --rule-2: #2a3432;
+      --grid: rgba(231,236,234,0.05);
+      --accent: #3fb493;
+      --accent-ink: #7fd3ba;
+      --accent-bg: #163a31;
+      --policy: #d3a94a;
+      --policy-bg: #3a2f14;
+      --threat: #e0685c;
+      --threat-bg: #46201c;
+      --zone-trusted: #3fb493;
+      --zone-session: #7aa6cc;
+      --zone-enforce: #e7ecea;
+      --zone-local: #9aaaa5;
+      --zone-external: #e0685c;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ground: #131817;
+    --paper: #1b2120;
+    --paper-2: #232b29;
+    --ink: #e7ecea;
+    --ink-2: #b4bfbc;
+    --ink-3: #85918e;
+    --rule: #364240;
+    --rule-2: #2a3432;
+    --grid: rgba(231,236,234,0.05);
+    --accent: #3fb493;
+    --accent-ink: #7fd3ba;
+    --accent-bg: #163a31;
+    --policy: #d3a94a;
+    --policy-bg: #3a2f14;
+    --threat: #e0685c;
+    --threat-bg: #46201c;
+    --zone-trusted: #3fb493;
+    --zone-session: #7aa6cc;
+    --zone-enforce: #e7ecea;
+    --zone-local: #9aaaa5;
+    --zone-external: #e0685c;
+  }
+
+  * { box-sizing: border-box; }
+  html { background: var(--ground); }
+  body {
+    margin: 0; color: var(--ink); background: var(--ground);
+    font: 400 15.5px/1.5 var(--body);
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .page { max-width: 1480px; margin: 0 auto; padding: 44px clamp(16px, 3vw, 48px) 80px; }
+  code { font-family: var(--mono); font-size: 0.86em; background: var(--paper-2); padding: 1px 5px; border-radius: 2px; color: var(--ink); }
+  .mono { font-family: var(--mono); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* masthead */
+  .mast { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px 48px; align-items: end; padding-bottom: 20px; border-bottom: 2px solid var(--ink); margin-bottom: 26px; }
+  .eyebrow { font: 600 11px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin: 0 0 12px; }
+  h1 { font: 700 40px/1.05 var(--display); letter-spacing: -0.02em; margin: 0 0 14px; text-wrap: balance; }
+  .lede { margin: 0; max-width: 64ch; color: var(--ink-2); font-size: 16.5px; }
+  .meta { font: 400 12px/1.7 var(--mono); color: var(--ink-3); text-align: right; white-space: nowrap; }
+  .meta b { color: var(--ink); font-weight: 600; }
+
+  /* legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 12px 30px; align-items: center; margin: 0 0 30px; font: 400 13px/1.4 var(--body); color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 9px; }
+  .sw { display: inline-block; width: 38px; height: 0; border-top: 2.5px solid var(--accent); position: relative; }
+  .sw::after { content: ""; position: absolute; right: -1px; top: -5px; border: 4px solid transparent; border-left: 7px solid var(--accent); }
+  .sw.dash { border-top-style: dashed; border-top-color: var(--policy); }
+  .sw.dash::after { border-left-color: var(--policy); }
+  .tag { display: inline-block; font: 600 10px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 7px 4px; border-radius: 2px; white-space: nowrap; }
+  .tag.hook { background: var(--accent-bg); color: var(--accent-ink); }
+  .tag.deny { background: var(--paper-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--rule); }
+  .tag.pol { background: var(--policy-bg); color: var(--policy); }
+  .tag.gap { background: var(--threat-bg); color: var(--threat); }
+  .tag.pend { background: var(--policy-bg); color: var(--policy); box-shadow: inset 0 0 0 1px var(--policy); }
+  .tag.ok { background: var(--accent-bg); color: var(--accent-ink); }
+
+  h2 { font: 700 22px/1.2 var(--display); letter-spacing: -0.01em; margin: 56px 0 6px; }
+  .h2sub { margin: 0 0 18px; color: var(--ink-2); max-width: 70ch; }
+
+  /* schematic */
+  .schematic { padding: 2px 0 10px; }
+  .zones { display: flex; flex-direction: column; }
+  .zone { background: var(--paper); border: 1.5px solid var(--rule); border-top: 5px solid var(--zc); display: flex; flex-direction: column; }
+  .zone header { padding: 12px 16px 10px; border-bottom: 1px solid var(--rule-2); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+  .zone header .lvl { font: 600 10px/1.4 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--zc); }
+  .zone header h3 { margin: 0; font: 700 17px/1.15 var(--display); letter-spacing: -0.01em; }
+  .zone header p { margin: 0; font-size: 13px; color: var(--ink-2); font-style: italic; }
+  .zone ul { list-style: none; margin: 0; padding: 12px 16px 14px; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px 24px; }
+  .zone li { font-size: 13.5px; line-height: 1.4; padding: 0 0 8px; border-bottom: 1px solid var(--rule-2); }
+  .zone li b { font-weight: 600; font-family: var(--display); font-size: 13px; }
+  .zone li .p { display: block; font: 400 11.5px/1.5 var(--mono); color: var(--ink-3); margin-top: 3px; overflow-wrap: anywhere; }
+  .zone li.policy { padding-left: 10px; border-left: 2px dashed var(--policy); }
+  .zone li.policy b { color: var(--policy); }
+  .zone li.policy b::before { content: "policy · "; font: 600 10px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
+  .z-trusted { --zc: var(--zone-trusted); }
+  .z-session { --zc: var(--zone-session); }
+  .z-enforce { --zc: var(--zone-enforce); background: var(--paper); }
+  .z-enforce header { background: var(--ink); color: var(--ground); border-bottom: 0; }
+  .z-enforce header .lvl, .z-enforce header p { color: var(--ground); opacity: 0.8; }
+  .z-local { --zc: var(--zone-local); }
+  .z-external { --zc: var(--zone-external); }
+
+  .gate { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 8px 32px; padding: 10px 8px; }
+  .edge { display: flex; flex-direction: column; align-items: center; font: 400 11px/1.35 var(--mono); color: var(--ink-2); text-align: center; max-width: 220px; }
+  .edge .ln { position: relative; width: 0; height: 22px; border-left: 2.5px solid var(--accent); margin: 4px 0 0; }
+  .edge .ln::after { content: ""; position: absolute; left: -5.25px; bottom: -2px; border: 4px solid transparent; border-bottom: 0; border-top: 7px solid var(--accent); }
+  .edge .ln.left::after { bottom: auto; top: -2px; border-top: 0; border-bottom: 7px solid var(--accent); }
+  .edge .ln.both::before { content: ""; position: absolute; left: -5.25px; top: -2px; border: 4px solid transparent; border-top: 0; border-bottom: 7px solid var(--accent); }
+  .edge.pol .ln { border-left-style: dashed; border-left-color: var(--policy); }
+  .edge.pol .ln::after { border-top-color: var(--policy); }
+  .edge.pol .ln.left::after { border-bottom-color: var(--policy); }
+  .edge.pol .ln.both::before { border-bottom-color: var(--policy); }
+
+  /* rules table */
+  .tw { overflow-x: auto; background: var(--paper); border: 1.5px solid var(--rule); }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th { font: 600 10.5px/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); text-align: left; padding: 12px 14px; border-bottom: 2px solid var(--ink); }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--rule-2); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td.flow { font: 600 13.5px/1.35 var(--display); white-space: nowrap; }
+  td.route { font: 400 12px/1.6 var(--mono); color: var(--ink-2); }
+  td.enf { white-space: nowrap; }
+  td.enf .tag + .tag { margin-left: 4px; }
+
+  /* register */
+  .register td.id { font: 600 12px/1.6 var(--mono); color: var(--ink-3); white-space: nowrap; }
+  .register td.sev { white-space: nowrap; }
+  .register .sev-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
+  .sev-crit .sev-dot { background: var(--threat); }
+  .sev-imp .sev-dot { background: var(--policy); }
+  .sev-min .sev-dot { background: var(--ink-3); }
+  .sev-res .sev-dot { background: transparent; box-shadow: inset 0 0 0 1.5px var(--ink-3); }
+
+  .note { margin: 18px 0 0; font-size: 13.5px; color: var(--ink-2); max-width: 78ch; }
+  .note.lead { margin: 0 0 30px; font-size: 15px; color: var(--ink); }
+  .note.lead b { font-family: var(--display); font-weight: 700; }
+  .foot { margin-top: 56px; padding-top: 14px; border-top: 1px solid var(--rule); font: 400 12px/1.7 var(--mono); color: var(--ink-3); overflow-wrap: anywhere; }
+
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+  @media (max-width: 760px) {
+    .mast { grid-template-columns: 1fr; }
+    .meta { text-align: left; white-space: normal; }
+    h1 { font-size: 32px; }
+  }
+</style>
+<div class="page">
+
+<header class="mast">
+  <div>
+    <p class="eyebrow">Claude Code Design · hardened workspace</p>
+    <h1>Trust zones and gates of the hardened design workspace</h1>
+    <p class="lede">Five zones, four boundaries. At every crossing the map answers one question: is this call stopped by code that runs before the tool does, or by a rule the model is trusted to keep? That distinction matters more than the zone labels. A hook blocks the call regardless of what the prompt says. A rule holds only while the model follows it.</p>
+  </div>
+  <div class="meta">
+    branch <b>claude-design-features</b><br>
+    hardening <b>f587624</b> · features <b>bfe0d29</b><br>
+    self-test <b>287 / 287</b> · re-run 2026-09-14<br>
+    drawn 2026-09-08 · revised 2026-09-14
+  </div>
+</header>
+
+<div class="legend">
+  <span><i class="sw"></i> enforced: a PreToolUse hook or a settings deny. Runs on every call, whatever the prompt says.</span>
+  <span><i class="sw dash"></i> policy: a CLAUDE.md or skill rule. The model keeps it, and nothing checks that it did.</span>
+  <span><i class="tag pend">patch pending</i> sits in <code>artifacts/hardening-patch/</code>, unapplied and never run</span>
+  <span><i class="tag gap">gap</i> confirmed by the code reviewer against the committed hooks</span>
+</div>
+
+<p class="note lead"><b>How a call moves through the map.</b> A prompt enters from the user's shell. The session picks a skill and issues a tool call. Before the tool runs, the deny list and the PreToolUse hooks check the call and block anything outside the allowed forms. An allowed call can reach only the writable tree, a local server on 127.0.0.1, an isolated Chrome, and local git. Anything returned from outside the machine is treated as data. Controls marked policy are not checked by code.</p>
+
+<div class="schematic">
+<div class="zones">
+
+  <section class="zone z-trusted">
+    <header>
+      <div class="lvl">A · full trust</div>
+      <h3>User's shell</h3>
+      <p>The one place that can change the rules.</p>
+    </header>
+    <ul>
+      <li><b>Owns the hook and settings files</b><span class="p">.claude/settings.json · .claude/hooks/* · .mcp.json · scripts/*</span></li>
+      <li><b>Switches branches, pushes, forks</b><span class="p">checkout · rebase · fork · push</span></li>
+      <li><b>Installs what the agent cannot</b><span class="p">puppeteer · pptxgenjs · monolith · gitleaks</span></li>
+      <li><b>Applies the hardening patch</b>, once the self-test passes<span class="p">bash .claude/hooks/test-guard.sh</span></li>
+    </ul>
+  </section>
+
+  <div class="gate">
+    <div class="edge">prompts · briefs · file paths<div class="ln"></div></div>
+    <div class="edge pol">one question back: ingest? apply brand? publish?<div class="ln left"></div></div>
+  </div>
+
+  <section class="zone z-session">
+    <header>
+      <div class="lvl">B · partial trust</div>
+      <h3>Claude Code session</h3>
+      <p>Every skill names its tools. None gets wildcard Bash.</p>
+    </header>
+    <ul>
+      <li><b>Workflow skills</b><span class="p">make-deck · interactive-prototype · wireframe · animated-video · create-design-system</span></li>
+      <li><b>Ingest skills</b><span class="p">ingest-github · ingest-figma · ingest-screenshot · ingest-document</span></li>
+      <li><b>Share and sync</b><span class="p">publish · snapshot · handoff · sync-design-system</span></li>
+      <li class="policy"><b>Phase 0</b> lists what it found and asks once. Nothing is ingested or applied unasked.</li>
+      <li class="policy"><b>Untrusted content</b> from a repo, Figma, a document, a comment or a fetched file is data. It never becomes an instruction.</li>
+      <li class="policy"><b>Publish</b> only when asked, and only a file the session has read.</li>
+    </ul>
+  </section>
+
+  <div class="gate">
+    <div class="edge">every Bash call<div class="ln"></div></div>
+    <div class="edge">Read · Write · Edit<div class="ln"></div></div>
+    <div class="edge">Chrome DevTools MCP<div class="ln"></div></div>
+    <div class="edge pol">Artifact · DesignSync<div class="ln"></div></div>
+  </div>
+
+  <section class="zone z-enforce">
+    <header>
+      <div class="lvl">Boundary · code</div>
+      <h3>Hooks and deny list</h3>
+      <p>A deny overrides any grant. Hooks are re-read from disk on every call, so a session cannot alter them in memory.</p>
+    </header>
+    <ul>
+      <li><b>settings.json deny list</b><span class="p">Write/Edit: .claude/hooks/** · settings*.json · .mcp.json · scripts/** · .git/**<br>Read: ~/.claude/** (side effect: auto-memory is off)<br>Bash: destructive, network and pipe-to-shell patterns</span></li>
+      <li><b>guard-bash.sh</b> · PreToolUse on all Bash<span class="p">splits the command into segments and checks each · allowlists for curl, node, python3, open, rm, zip, unzip, gh, git · no shells, interpreters, wrappers or package managers · redirects only to /dev/null · path arguments inside the project and off protected files</span></li>
+      <li><b>guard-browser.py</b> · PreToolUse on <code>navigate_page</code>, <code>new_page</code>, <code>evaluate_script</code>, both Chrome DevTools servers<span class="p">file:// realpath under the project, excluding .claude/ .git/ node_modules/ · http://127.0.0.1 only · initScript refused · filePath refused · NET_RE text filter on the script</span></li>
+      <li><b>Self-test</b> · 287 cases, all passing<span class="p">the one bash invocation the guard allows</span></li>
+    </ul>
+  </section>
+
+  <div class="gate">
+    <div class="edge">allowed forms only<div class="ln"></div></div>
+    <div class="edge pol">blocked → say so, no workaround<div class="ln left"></div></div>
+  </div>
+
+  <section class="zone z-local">
+    <header>
+      <div class="lvl">C · sandboxed</div>
+      <h3>Local effects</h3>
+      <p>What a call that gets through can actually reach.</p>
+    </header>
+    <ul>
+      <li><b>Writable tree</b><span class="p">artifacts/** · handoff/ · design-systems/ · .claude/design-tokens.json · .claude/last-*</span></li>
+      <li><b>Protected tree</b> · read-only to the agent<span class="p">.claude/hooks · .claude/settings* · .mcp.json · scripts/ · .git/</span></li>
+      <li><b>Ingest scratch</b><span class="p">/tmp/cd-ingest-* · the only rm target</span></li>
+      <li><b>/serve</b><span class="p">python3 -m http.server --bind 127.0.0.1 --directory artifacts</span></li>
+      <li><b>Export scripts</b> · node, three files<span class="p">script hosts limited to unpkg + Google Fonts</span></li>
+      <li><b>Chrome</b> · pinned MCP, throwaway profile<span class="p">--isolated · pages: file://&lt;project&gt;/artifacts, 127.0.0.1</span></li>
+      <li><b>git</b> · local only<span class="p">no remote URLs · no config writes · no clone</span></li>
+    </ul>
+  </section>
+
+  <div class="gate">
+    <div class="edge">gh repo clone → scratch<div class="ln left"></div></div>
+    <div class="edge">curl GET api.figma.com<div class="ln left"></div></div>
+    <div class="edge">screenshots · office docs<div class="ln left"></div></div>
+    <div class="edge pol">publish ↔ comments<div class="ln both"></div></div>
+    <div class="edge pol">DesignSync plan → approve → write<div class="ln"></div></div>
+    <div class="edge">CDN scripts, SRI pinned<div class="ln left"></div></div>
+  </div>
+
+  <section class="zone z-external">
+    <header>
+      <div class="lvl">D · no trust</div>
+      <h3>External</h3>
+      <p>Nothing from here is an instruction.</p>
+    </header>
+    <ul>
+      <li><b>github.com</b><span class="p">cloned repos · README text · token files</span></li>
+      <li><b>api.figma.com</b><span class="p">JSON node trees · names · text layers</span></li>
+      <li><b>User-supplied files</b><span class="p">PNG / JPG screenshots · PPTX / DOCX / XLSX / PDF</span></li>
+      <li><b>claude.ai</b><span class="p">published pages, private by default · comment threads · Claude Design projects</span></li>
+      <li><b>CDNs</b><span class="p">unpkg locally · jsdelivr on published copies · same bytes, same integrity hashes</span></li>
+      <li class="policy"><b>Text addressed to the agent</b> gets quoted back to the user, and the turn stops there.</li>
+    </ul>
+  </section>
+
+</div>
+</div>
+
+<h2>Crossings and their gates</h2>
+<p class="h2sub">Eight of the eleven crossings below have code behind them. Three rest on the model alone: publish, comments and design-system sync, and all three face claude.ai. Where the only enforcer is policy, the model is the control, so those rows describe expected behaviour, not enforced behaviour.</p>
+<div class="tw">
+<table>
+  <thead><tr><th>Flow</th><th>Route</th><th>Gate</th><th>Checked by</th></tr></thead>
+  <tbody>
+    <tr><td class="flow">Ingest a repo</td><td class="route">github.com → /tmp/cd-ingest-* → artifacts/ingested/</td><td>An explicit yes in the same turn. Only <code>gh repo clone</code>; the scratch dir is the only <code>rm</code> target; extracted tokens land under <code>artifacts/ingested/</code>.</td><td class="enf"><span class="tag pol">policy</span><span class="tag hook">guard-bash</span></td></tr>
+    <tr><td class="flow">Ingest Figma</td><td class="route">api.figma.com → artifacts/ingested/</td><td>One <code>https://api.figma.com/</code> URL, GET only, <code>-o</code> under <code>artifacts/ingested/</code>. The token comes from the environment and is never echoed.</td><td class="enf"><span class="tag hook">guard-bash</span><span class="tag deny">deny list</span></td></tr>
+    <tr><td class="flow">Ingest a file</td><td class="route">user path → vision or unzip -p → artifacts/ingested/</td><td><code>unzip</code> only in <code>-p</code> / <code>-l</code> mode, so nothing is extracted to disk. Office XML and PDF text are data.</td><td class="enf"><span class="tag hook">guard-bash</span><span class="tag pol">policy</span></td></tr>
+    <tr><td class="flow">Preview</td><td class="route">artifacts/*.html → isolated Chrome</td><td>file:// realpath under the project. <code>/serve</code> bound to 127.0.0.1 and serving <code>artifacts/</code> only. No <code>initScript</code>.</td><td class="enf"><span class="tag hook">guard-browser</span><span class="tag hook">guard-bash</span><span class="tag deny">.mcp.json --isolated</span></td></tr>
+    <tr><td class="flow">Audit script</td><td class="route">session → evaluate_script on an artifact page</td><td>No <code>filePath</code>. The function text must not open a connection, navigate, inject elements or touch storage. A text filter, so best-effort.</td><td class="enf"><span class="tag hook">guard-browser</span><span class="tag gap">gap G-06</span></td></tr>
+    <tr><td class="flow">Export</td><td class="route">artifacts/*.html → PDF · PPTX · standalone</td><td><code>node</code> runs only the three <code>scripts/*.mjs</code>. Those scripts load from unpkg and Google Fonts only. <code>zip</code> stays under <code>handoff/</code> or <code>artifacts/</code>.</td><td class="enf"><span class="tag hook">guard-bash</span><span class="tag deny">script allowlist</span></td></tr>
+    <tr><td class="flow">Publish</td><td class="route">artifacts/publish/&lt;copy&gt; → claude.ai, private page</td><td>The user asks. The file was read this session. A self-contained copy goes up, unpkg rewritten to jsdelivr with the same SRI hash, and no runtime capabilities.</td><td class="enf"><span class="tag pol">policy</span></td></tr>
+    <tr><td class="flow">Comments</td><td class="route">claude.ai → session</td><td>Read on request. Quoted to the user, never followed.</td><td class="enf"><span class="tag pol">policy</span></td></tr>
+    <tr><td class="flow">Design-system sync</td><td class="route">design-systems/&lt;name&gt;/ → Claude Design project</td><td>List, plan, approve, write, one component at a time. Never a wholesale replace. Nobody has run this flow end to end yet.</td><td class="enf"><span class="tag pol">policy</span></td></tr>
+    <tr><td class="flow">Self-protection</td><td class="route">session → hooks · settings · .mcp.json · scripts/</td><td>Write and Edit denied. <code>cp</code> / <code>mv</code> onto them denied. <code>sed -i</code>, <code>tee</code> and file redirects denied. The session cannot modify its own guards.</td><td class="enf"><span class="tag deny">deny list</span><span class="tag hook">guard-bash</span><span class="tag gap">gap G-05</span></td></tr>
+    <tr><td class="flow">Secrets</td><td class="route">environment · dotfiles → anywhere</td><td>No <code>~/.ssh</code>, <code>~/.aws</code>, <code>~/.claude</code>, <code>.env</code>, <code>*.pem</code> paths. No <code>echo $TOKEN</code>-shaped commands.</td><td class="enf"><span class="tag hook">guard-bash</span><span class="tag deny">deny list</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Findings register</h2>
+<p class="h2sub">Bugs the code reviewer found in this repo's own guard hooks and settings, not in Claude Code itself, plus the residual risks accepted by design. G rows are bugs with a fix pending. R rows are limits that stay by design. Severity is the reviewer's. Status is where the fix stands today, which for most rows means written, not applied.</p>
+<div class="tw">
+<table class="register">
+  <thead><tr><th>ID</th><th>Finding</th><th>Severity</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td class="id">G-01</td><td>Quote the command name (<code>"perl" -zzz</code>, <code>pe'r'l</code>) and no name-anchored rule matches. The shell strips the quotes before running the command; the regex does not.</td><td class="sev sev-crit"><span class="sev-dot"></span>Critical</td><td><span class="tag pend">patch pending</span></td></tr>
+    <tr><td class="id">G-02</td><td>A <code>./</code> or <code>//</code> prefix turns a protected path into a string the protected-file list does not recognise. Same file, different spelling.</td><td class="sev sev-crit"><span class="sev-dot"></span>Critical</td><td><span class="tag pend">patch pending</span></td></tr>
+    <tr><td class="id">G-03</td><td>ANSI-C quoting (<code>$'\x2e\x2e'</code>) hides <code>..</code> and absolute paths inside byte escapes the guard never decodes.</td><td class="sev sev-crit"><span class="sev-dot"></span>Critical</td><td><span class="tag pend">patch pending</span></td></tr>
+    <tr><td class="id">G-04</td><td>Readers (<code>cat</code>, <code>head</code>, <code>rg</code>, …) can read any non-dotfile path on the machine. The dotfile rule protects credentials, not the rest of the home directory.</td><td class="sev sev-imp"><span class="sev-dot"></span>Important</td><td><span class="tag pend">patch pending</span></td></tr>
+    <tr><td class="id">G-05</td><td><code>git checkout &lt;sha&gt; -- .</code> or <code>git reset --hard</code> restores an older, weaker hook, and the guard trusts whichever hook is on disk.</td><td class="sev sev-imp"><span class="sev-dot"></span>Important</td><td><span class="tag pend">patch pending</span></td></tr>
+    <tr><td class="id">G-06</td><td>The <code>evaluate_script</code> filter is a text denylist, and <code>window["fe"+"tch"]</code> is not matched. A denylist cannot list every way JavaScript can express a call.</td><td class="sev sev-imp"><span class="sev-dot"></span>Important</td><td><span class="tag pend">patch pending</span></td></tr>
+    <tr><td class="id">G-07</td><td>False positives: <code>2&gt;&amp;1</code> inside a pipeline and <code>which node</code> are blocked, so <code>/doctor</code> and both export preflights fail. A guard that blocks the documented workflow pushes users to work around it.</td><td class="sev sev-imp"><span class="sev-dot"></span>Important</td><td><span class="tag pend">patch pending</span></td></tr>
+    <tr><td class="id">G-08</td><td>The <code>Bash(rm -rf /*)</code> deny also matches the documented <code>rm -rf /tmp/cd-ingest-…</code> cleanup, per the reviewer, so ingest cannot delete its scratch directory.</td><td class="sev sev-imp"><span class="sev-dot"></span>Important</td><td><span class="tag pend">manual settings edit</span></td></tr>
+    <tr><td class="id">G-09</td><td><code>[^\n]</code> in two regexes meant "not backslash, not n" rather than "not newline". Not exploitable, but it sits in a security regex and should be corrected.</td><td class="sev sev-min"><span class="sev-dot"></span>Minor</td><td><span class="tag pend">patch pending</span></td></tr>
+    <tr><td class="id">R-01</td><td>The <code>evaluate_script</code> filter stays best-effort after the patch. The real boundary is the URL scope: the browser only ever loads pages this repo generated, so a script the filter misses runs against a page this repo wrote.</td><td class="sev sev-res"><span class="sev-dot"></span>Residual</td><td><span class="tag deny">accepted</span></td></tr>
+    <tr><td class="id">R-02</td><td>The browser hook matches three tools. <code>click</code>, <code>fill_form</code> and <code>upload_file</code> are ungated, and no skill asks for them. Unguarded, and so far unused.</td><td class="sev sev-res"><span class="sev-dot"></span>Residual</td><td><span class="tag deny">accepted</span></td></tr>
+    <tr><td class="id">R-03</td><td>Every policy-only crossing depends on the model. Prompt injection through ingested content is contained, not detected: a hijacked session can still only do what the hooks allow.</td><td class="sev sev-res"><span class="sev-dot"></span>Residual</td><td><span class="tag deny">by design</span></td></tr>
+    <tr><td class="id">R-04</td><td>The guard reads raw command text, so prose with a command name, a backtick, <code>..</code> or <code>&gt;</code> in it is blocked. While revising this page, a search for the literal string <code>&lt;title&gt;</code> was refused as a redirect. A usability cost, not a security gap. Use the Read or Grep tool for such text.</td><td class="sev sev-res"><span class="sev-dot"></span>Residual</td><td><span class="tag deny">by design</span></td></tr>
+    <tr><td class="id">R-05</td><td>Hooks and settings are tracked files, so switching branches is the user's job, from their own shell. Until the patch is applied, G-05 lets a session bypass that rule.</td><td class="sev sev-res"><span class="sev-dot"></span>Residual</td><td><span class="tag deny">by design</span></td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note">After the patch is applied: the command word must be on a positive allowlist and <code>cd</code> is not on it, readers only see the project and the ingest scratch, git can no longer rewrite the tree except through <code>checkout -b</code> and <code>switch -c</code>, and the browser filter also catches computed property access, <code>eval</code>, string timers and <code>.click()</code>. The patch README says its self-test has 384 cases. That number is the README's, not this page's: nobody has run it yet, and it has to pass before the copy replaces the committed hooks.</p>
+
+<p class="foot">Source of truth: CLAUDE.md · .claude/settings.json · .claude/hooks/guard-bash.sh · .claude/hooks/guard-browser.py · .claude/hooks/test-guard.sh · artifacts/hardening-patch/README.md</p>
+
+</div>
