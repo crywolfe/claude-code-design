@@ -14,7 +14,7 @@ Run in parallel where possible:
 
 1. `Bash(claude mcp list)` — parse output, look for `chrome-devtools: ✓ Connected`
 2. `Bash(which monolith)` — existence check
-3. `Bash(which node)` — required
+3. `Bash(node --version)` — required (`which node` is blocked by the guard; `node --version` is the allowed form and prints the version for the report)
 4. `Bash(which gh)` — for `/ingest-github`
 5. `Bash(test -f package.json)` — exit 0 = exists
 6. `Bash(test -d starters)` — expect exit 0

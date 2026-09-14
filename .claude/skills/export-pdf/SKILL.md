@@ -13,7 +13,7 @@ Produce a PDF from an HTML artifact. Uses puppeteer's `Page.pdf()` which is loss
 
 ## Preflight
 
-1. `Bash(which node)` — required
+1. `Bash(node --version)` — required (`which node` is blocked by the guard)
 2. `Bash(test -d node_modules/puppeteer)` — if the exit code is non-zero, tell the user to run `npm install -D puppeteer@24.41.0` in a separate shell (or `/doctor` for the full list), and stop
 
 ## Steps

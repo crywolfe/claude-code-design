@@ -37,7 +37,7 @@ In the first turn, run:
 
 `/doctor` performs:
 
-1. Inventory: `claude mcp list` → checks Chrome DevTools MCP; `which monolith node gh`; tests project structure
+1. Inventory: `claude mcp list` → checks Chrome DevTools MCP; `which monolith`, `node --version`, `which gh` (the guard blocks `which node`); tests project structure
 2. Repair: prints the install commands for missing pieces (`claude mcp add chrome-devtools -s project -- npx chrome-devtools-mcp@1.9.0 --isolated`, `brew install monolith`, `npm install -D pptxgenjs@4.0.1 puppeteer@24.41.0`) — **you run them in a separate shell**; the agent never installs software
 3. Smoke test: creates a tiny `test/smoke-deck.html`, runs `/done` on it, reports pass/fail
 4. Prints a skill cheat-sheet
@@ -53,21 +53,21 @@ The MCP is declared in `.mcp.json` (pinned version, `--isolated` so it runs a th
 Once `/doctor` is clean, try:
 
 ```
-make a 3-slide deck about the history of butter
+make a 3-slide deck about the history of butter for a general audience, editorial style
 ```
 
 Expected flow:
 
 1. `make-deck` skill fires on trigger ("deck", "slides")
 2. Phase 0: scans project for design tokens / attached files → reports "No context — using frontend-design for aesthetic direction". If the brief contained a GitHub/Figma URL, a document or an image, Claude lists it and **asks** before ingesting — nothing is cloned, fetched or installed without you saying yes
-3. Phase 1: ambiguity gate — brief has length (3 slides) but no audience/style → one or two quick `AskUserQuestion`s
+3. Phase 1: ambiguity gate — brief has length (3 slides), audience (general) and style (editorial) → gate passes → one or two quick `AskUserQuestion`s. A brief with only the length gets the full questionnaire
 4. Phase 1.5: speaker-notes heuristic — "history of butter / 3 slides" is short → decides **notes: off**
 5. Writes `artifacts/history-of-butter.html`, copies `starters/deck_stage.js` alongside
 6. Runs `/done artifacts/history-of-butter.html`:
    - Opens in Chrome via `open`
    - Chrome DevTools MCP navigates + waits for fonts
    - Screenshot saved to `.claude/last-preview.png`
-   - DOM snapshot saved to `.claude/last-snapshot.json`
+   - DOM snapshot saved to `.claude/last-snapshot.txt`
    - Console messages listed
 7. If clean: auto-registers the deck → updates `assets.html`
 8. Verifies visually via `verify-artifact` (silent on pass; also checks the active design system's tokens when one is loaded)
@@ -87,7 +87,7 @@ claude-code-design/
 ├── design-assets.json               # registry data
 └── .claude/
     ├── last-preview.png             # last /done screenshot
-    └── last-snapshot.json           # last /done DOM snapshot
+    └── last-snapshot.txt            # last /done DOM snapshot
 ```
 
 `artifacts/`, `assets.html`, `assets/thumbs/`, `design-assets.json`, and `.claude/last-*` are **git-ignored** — each clone starts clean.

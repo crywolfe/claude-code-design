@@ -35,7 +35,7 @@ If skipping date match (e.g. resume from yesterday), `Bash(ls artifacts/tweaks/)
    - If any key invalid: report which + stop (do not partially apply)
 
 4. **Apply:** for each key → value in pending, by type:
-   - `color` / `number` / `boolean` — **CSS var on `:root`:** find `--tweak-<key>: <old>;` and `Edit` to new value (boolean: also update `"default"` in the schema block so the class toggle starts in the new state)
+   - `color` / `number` / `boolean` — **CSS var on `:root`:** find `--tweak-<key>: <old>;` and `Edit` to new value, **and** update `"default"` for that key in the `__tweak_schema` block. The panel re-applies every schema default on load as an inline style on `<html>`, so a stale default would silently override the CSS var you just edited (boolean: the class toggle also starts from the default)
    - `enum` — `Edit` the schema `"default"` and, if the root element carries `data-tweak-<key>="…"`, that attribute
    - `string` — `Edit` the text content of every element matching `target` (default `[data-tweak="<key>"]`) and the schema `"default"`
    - **Marker block fallback:** `<!-- tweak:<key> -->...<!-- /tweak:<key> -->` → `Edit` the content inside

@@ -172,7 +172,7 @@ Explicit `/register-asset` is still available for overrides (custom asset name, 
 
 In-canvas click-to-comment is not available in a terminal. Instead, when the user references an element in English ("the red button in the hero", "the third card from the top"), invoke `/inspect <description>`:
 
-- Uses `.claude/last-snapshot.json` (captured by `/done` via `mcp__chrome-devtools__take_snapshot`)
+- Uses `.claude/last-snapshot.txt` (captured by `/done` via `mcp__chrome-devtools__take_snapshot`, which writes plain text)
 - Matches description → UID → concrete DOM node
 - Resolves to source-file location for deterministic `Edit`
 - Handles ambiguity by showing 2-3 candidates

@@ -74,8 +74,12 @@ Append before `</body>`:
   const schema = JSON.parse(schemaEl.textContent);
   const values = Object.fromEntries(Object.entries(schema).map(([k, v]) => [k, v.default]));
 
-  // Restore from localStorage for in-browser state
-  const lsKey = '__tweaks_' + location.pathname;
+  // Restore from localStorage for in-browser state. The key includes a hash of the schema
+  // text: once /apply-tweaks edits the file (and its schema defaults), the hash changes and
+  // stale in-browser values from the previous schema are ignored instead of overriding the
+  // on-disk values.
+  const schemaHash = Array.from(schemaEl.textContent).reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7).toString(36);
+  const lsKey = '__tweaks_' + location.pathname + '_' + schemaHash;
   try { Object.assign(values, JSON.parse(localStorage.getItem(lsKey) || '{}')); } catch {}
 
   const panel = document.createElement('div');
@@ -90,7 +94,9 @@ Append before `</body>`:
     box-shadow: 0 8px 24px rgba(0,0,0,0.12);
   `;
 
-  const applyValues = () => {
+  // `persist` is true only for user edits: the initial call must not write the schema
+  // defaults into localStorage, or they would come back as inline styles on every load.
+  const applyValues = (persist = false) => {
     const root = document.documentElement;
     for (const [k, v] of Object.entries(values)) {
       const meta = schema[k];
@@ -102,7 +108,7 @@ Append before `</body>`:
         for (const el of document.querySelectorAll(meta.target || '[data-tweak="' + k + '"]')) el.textContent = v;
       }
     }
-    try { localStorage.setItem(lsKey, JSON.stringify(values)); } catch {}
+    if (persist) { try { localStorage.setItem(lsKey, JSON.stringify(values)); } catch {} }
   };
 
   const header = document.createElement('div');
@@ -164,7 +170,7 @@ Append before `</body>`:
     input.addEventListener('input', () => {
       values[key] = meta.type === 'boolean' ? input.checked :
                     meta.type === 'number' ? Number(input.value) : input.value;
-      applyValues();
+      applyValues(true);
       scheduleWrite();
     });
     row.appendChild(input);
@@ -262,5 +268,7 @@ Return to user: "Tweaks enabled. Press Shift+T in the preview to open. Click 'Li
 ## Phase 5 — Verify
 
 Run `/serve` (needed if artifact uses external `.jsx` starters), then `/done http://127.0.0.1:4567/<path-relative-to-artifacts>` → panel appears, Shift+T toggles, no console errors.
+
+**Why the schema hash and the `persist` flag:** `/apply-tweaks` writes the new values into the CSS vars *and* the schema defaults. The panel re-applies its values as inline styles on `<html>` at load, which beat the stylesheet. Without the hash, values saved in localStorage under the old schema would keep overriding the edited file; without the flag, the first load would save the defaults and produce the same effect on the next reload.
 
 **Note on persistence:** File System Access API requires http origin (works on `file://` in Chrome >= 2024 but with caveats). Recommend always serving tweakable artifacts over http.

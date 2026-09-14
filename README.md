@@ -52,10 +52,10 @@ This repo is a **Claude Code workspace** meant to be used as a **GitHub template
 5. **Make something.**
 
    ```
-   make a 3-slide deck about the history of butter
+   make a 3-slide deck about the history of butter for a general audience, editorial style
    ```
 
-   The deck lands at `artifacts/history-of-butter.html`, opens in Chrome, gets screenshotted to `.claude/last-preview.png` and appears in `assets.html`.
+   Audience, style and length are all in the brief, so the ambiguity gate asks one or two short questions and starts. The deck lands at `artifacts/history-of-butter.html`, opens in Chrome, gets screenshotted to `.claude/last-preview.png` and appears in `assets.html`. Leave the audience and style out and you get the full questionnaire instead.
 
 The long-form walkthrough with requirements, expected console output and common issues is in [`GETTING_STARTED.md`](./GETTING_STARTED.md).
 
@@ -71,7 +71,7 @@ Each example is something you type into Claude Code in this folder, followed by 
 make-deck: 8-slide investor deck for Northwind Coffee's Series A, warm editorial style, with speaker notes
 ```
 
-- **Fires** `/make-deck`. Audience, style and length are all in the brief, so the ambiguity gate skips the questionnaire and asks at most one question.
+- **Fires** `/make-deck`. Audience, style and length are all in the brief, so the ambiguity gate skips the questionnaire and asks one or two questions.
 - **Writes** `artifacts/northwind-series-a.html` and copies `starters/deck_stage.js` beside it. Speaker notes go into a `<script id="speaker-notes">` block.
 - **Then** `/done` runs the per-slide overflow audit. Anything with `overflow > 0` is fixed before the turn ends. Export with `/export-pptx artifacts/northwind-series-a.html`; the notes attach to each slide.
 
@@ -172,8 +172,8 @@ create a design system from ./web (it has tailwind.config.ts) and call it acme
 
 ## Daily loop for continuing users
 
-1. **Brief in plain language.** Keywords route to a skill: "deck", "prototype", "wireframe", "animation", "design system". Include audience, style and length and the questionnaire collapses to one question.
-2. **Let `/done` gate the turn.** Every meaningful change ends with a preview, a console sweep, a screenshot at `.claude/last-preview.png`, a DOM snapshot at `.claude/last-snapshot.json`, and automatic registration in `assets.html`. Decks also get the overflow audit.
+1. **Brief in plain language.** Keywords route to a skill: "deck", "prototype", "wireframe", "animation", "design system". Include audience, style and length and the questionnaire collapses to one or two questions.
+2. **Let `/done` gate the turn.** Every meaningful change ends with a preview, a console sweep, a screenshot at `.claude/last-preview.png`, a DOM snapshot at `.claude/last-snapshot.txt`, and automatic registration in `assets.html`. Decks also get the overflow audit.
 3. **Refer to elements in words.** "The red button in the hero" resolves through `/inspect` to a source location. There is no canvas to click.
 4. **Snapshot before big reworks**, tweak for small ones, and let `verify-artifact` flag drift from the loaded design system.
 5. **Ship**: `/export-pptx`, `/export-pdf`, `/export-standalone`, `/handoff`, or `/publish` when a claude.ai session is available.
@@ -182,7 +182,7 @@ create a design system from ./web (it has tailwind.config.ts) and call it acme
 
 **Expect the guard to say no sometimes.** The bash guard allows only the documented form of each command and reads the raw command string, so it also blocks prose that looks like a command. Things returning users hit:
 
-- `which node` is blocked; `node --version` is the allowed form. `/doctor` reports this and continues.
+- `which node` is blocked; `node --version` is the allowed form and is what `/doctor` and the export preflights use. `which monolith` and `which gh` are allowed.
 - A commit message containing words like "security", "env vars" or a `<…>` trailer is blocked inline. Write the message to `artifacts/commit-msg.txt` and run `git commit -F artifacts/commit-msg.txt`, which is an allowed and self-tested form.
 - Redirects go only to `/dev/null`; heredocs, `sed -i` and `tee` are refused. Use Write or Edit for file changes.
 
@@ -202,7 +202,7 @@ Everything is inside the repo folder. Nothing is written outside it, and nothing
 | `handoff/<name>/` | developer bundles | no |
 | `design-systems/<name>/` | `tokens.json`, optional `manifest.json`, `preview.html`, `sync/` | no |
 | `assets.html`, `design-assets.json`, `assets/thumbs/` | the auto-maintained overview | no |
-| `.claude/last-preview.png`, `.claude/last-snapshot.json` | the latest `/done` capture | no |
+| `.claude/last-preview.png`, `.claude/last-snapshot.txt` | the latest `/done` capture | no |
 | `.claude/design-tokens.json` | the active design system | no |
 | `CLAUDE.md`, `.claude/skills/`, `.claude/commands/`, `.claude/hooks/`, `.claude/settings.json`, `.mcp.json`, `starters/`, `scripts/` | the workspace itself | yes |
 
@@ -259,7 +259,7 @@ For refining an artifact after the first `/done`.
 | `/make-tweakable` | a floating panel so a viewer can change colors/fonts/spacing/copy/variants live in the preview | Injects a panel driven by a typed `__tweak_schema` (`color`, `number`, `boolean`, `enum`, `string` with `label` / `group` / `target`) bound to `--tweak-*` custom properties, `data-tweak-*` attributes and `data-tweak` text targets. Panel writes to `pending.yaml` via File System Access API (falls back to clipboard / copy-paste). Shift+T toggles visibility |
 | `/apply-tweaks` | to persist panel changes to disk | Reads `pending.yaml`, validates each value against its declared type, applies via `Edit` to the source HTML, appends `applied/<ISO8601>.yaml` to session log (claude-pipe file-state pattern). `git diff applied/` is the revert audit trail |
 | `/snapshot <html> <label>` | a named version before a big rework, or to go back | Copies to `artifacts/versions/<name>/<ts>-<label>.html` and records label + note in `index.json`. `list` / `restore` (restore snapshots the current state first) |
-| `/inspect "<description>"` | to reference a specific visual element without pointing at source | Uses `.claude/last-snapshot.json` from `mcp__chrome-devtools__take_snapshot` (accessibility tree with UIDs). Matches description → UID → source location via `id` > `data-*` > unique class > `outerHTML` substring. Replaces Claude Design's `<mentioned-element>` pointer protocol |
+| `/inspect "<description>"` | to reference a specific visual element without pointing at source | Uses `.claude/last-snapshot.txt` from `mcp__chrome-devtools__take_snapshot` (accessibility tree with UIDs). Matches description → UID → source location via `id` > `data-*` > unique class > `outerHTML` substring. Replaces Claude Design's `<mentioned-element>` pointer protocol |
 | `/verify-artifact` | a visual QA pass before claiming done | Silent-on-pass. Fresh screenshot + console sweep; vision reads the image and checks Claude Design anti-pattern list (min 24px text on slides, contrast ≥ 4.5:1, no gradient backgrounds, no Inter/Roboto, no AI-slop card patterns, no filler). When `.claude/design-tokens.json` is loaded, also walks computed colors / fonts / radii and reports off-token drift (P1 fonts, P1/P2 colors). Reports P0/P1/P2/P3 with coordinates or element descriptions |
 
 ### Organization
@@ -268,7 +268,7 @@ Produced and maintained automatically; no explicit user action required.
 
 | Skill / output | Mechanism |
 |---|---|
-| `/done <path-or-url>` | End-of-turn gate. `/preview` + async await for `document.readyState === 'complete'` + `document.fonts.ready` (2s race). Screenshot → `.claude/last-preview.png`. DOM snapshot → `.claude/last-snapshot.json`. Console sweep for errors. On clean, auto-invokes `/register-asset --auto` with group inferred from content (`<deck-stage>` → Brand; `<DeviceFrame>` / `<DesignCanvas>` → Components; `data-design-group` attrs → per-section) |
+| `/done <path-or-url>` | End-of-turn gate. `/preview` + async await for `document.readyState === 'complete'` + `document.fonts.ready` (2s race). Screenshot → `.claude/last-preview.png`. DOM snapshot → `.claude/last-snapshot.txt` (the MCP writes plain text whatever extension is requested). Console sweep for errors. On clean, auto-invokes `/register-asset --auto` with group inferred from content (`<deck-stage>` → Brand; `<DeviceFrame>` / `<DesignCanvas>` → Components; `data-design-group` attrs → per-section) |
 | `/register-asset` | Upserts entry in `design-assets.json`, reuses `.claude/last-preview.png` as thumbnail when `--auto`, regenerates `assets.html` via `scripts/make-assets-index.mjs` |
 | `assets.html` | Auto-generated grid, grouped by Type / Colors / Spacing / Components / Brand. Cards show thumbnail, name, subtitle, status badge (needs-review / approved / changes-requested), updated date. The persistent workspace, equivalent of Claude Design's Recent tab |
 

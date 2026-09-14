@@ -80,7 +80,7 @@ Vocalize the system in one paragraph before writing slides.
 
 ## Phase 3 — Build
 
-1. Create `artifacts/<slug>.html` with shell:
+1. Create `artifacts/<slug>.html` with shell (`<slug>` = kebab-case of the deck's topic only, e.g. "history of butter" → `history-of-butter`; audience, style and length words in the brief never enter the filename):
    ```html
    <!doctype html>
    <html lang="en">

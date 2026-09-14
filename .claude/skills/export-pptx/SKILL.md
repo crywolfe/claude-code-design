@@ -11,7 +11,7 @@ Screenshot-based PPTX export — each `<section>` inside `<deck-stage>` becomes 
 
 ## Preflight
 
-1. `Bash(which node)` — if missing, tell user to install Node 20+
+1. `Bash(node --version)` — if it fails, tell user to install Node 20+ (`which node` is blocked by the guard)
 2. `Bash(test -d node_modules/pptxgenjs)` and `Bash(test -d node_modules/puppeteer)` — if either exit code is non-zero, tell the user to run `npm install -D pptxgenjs@4.0.1 puppeteer@24.41.0` in a separate shell (or `/doctor`), and stop. Never run `npm` from this skill.
 
 ## Steps

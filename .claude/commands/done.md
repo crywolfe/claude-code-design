@@ -29,7 +29,8 @@ End-of-turn gate: make sure the artifact at `$0` opens cleanly, capture evidence
 3. Take screenshot: `mcp__chrome-devtools__take_screenshot` → save to `.claude/last-preview.png` (create `.claude/` first if missing via `Bash(mkdir -p .claude)`).
 
 4. **Snapshot DOM for element-reference** (H2):
-   `mcp__chrome-devtools__take_snapshot` → `.claude/last-snapshot.json`
+   `mcp__chrome-devtools__take_snapshot` with `filePath: ".claude/last-snapshot.txt"` → `.claude/last-snapshot.txt`
+   (The MCP writes a plain-text tree and forces a `.txt` extension, so never ask for `.json`.)
    This captures an accessibility tree with UIDs. Later turns can reference "the red button in the hero" and `/inspect` will resolve to a specific UID and then to source.
 
 5. List console messages: `mcp__chrome-devtools__list_console_messages` — filter by severity `error`.
@@ -40,7 +41,7 @@ End-of-turn gate: make sure the artifact at `$0` opens cleanly, capture evidence
    - Re-run `/done $0`
 
 7. If clean:
-   - Report "preview OK — `.claude/last-preview.png` captured, `.claude/last-snapshot.json` captured"
+   - Report "preview OK — `.claude/last-preview.png` captured, `.claude/last-snapshot.txt` captured"
    - Include a screenshot reference in end-of-turn summary so Claude and user see the same frame.
 
 8. **Auto-register** (H1): if `$0` is a local path (not an http URL) AND it lives under `artifacts/`:

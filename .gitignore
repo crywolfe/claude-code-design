@@ -12,7 +12,7 @@ dist/
 
 # Generated state from /done, /verify-artifact, /make-tweakable
 .claude/last-preview.png
-.claude/last-snapshot.json
+.claude/last-snapshot.txt
 .claude/verify-*.png
 .claude/design-tokens.json
 .claude/.serve.pid

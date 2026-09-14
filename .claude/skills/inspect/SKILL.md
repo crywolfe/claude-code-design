@@ -12,12 +12,12 @@ Replaces Claude Design's `<mentioned-element>` inline-comment protocol with a te
 ## Prerequisites
 
 - Chrome DevTools MCP has a page loaded (via `/preview` or `/done`)
-- `.claude/last-snapshot.json` exists (produced by `/done`) — or we snapshot fresh
+- `.claude/last-snapshot.txt` exists (produced by `/done`) — or we snapshot fresh
 
 ## Pipeline
 
 1. **Get snapshot:**
-   - Prefer `Read .claude/last-snapshot.json` if recent (< 5 min, same URL)
+   - Prefer `Read .claude/last-snapshot.txt` if recent (< 5 min, same URL)
    - Otherwise `mcp__chrome-devtools__take_snapshot` to get fresh tree
 
 2. **Match the description** against snapshot nodes. Use vision + text heuristics:
