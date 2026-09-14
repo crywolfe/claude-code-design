@@ -18,7 +18,7 @@ Unlike a static gallery (files pre-authored), this skill runs the actual workflo
 2. Pick a canned brief from the matrix below. Tell the user which one you're using so they can change it.
 
 3. Route to the matching workflow skill **bypassing Phase 0/1** (context pre-flight and ambiguity gate) — we're generating a demo, not gathering requirements. Pass the dummy brief plus these overrides:
-   - Use `frontend-design` for aesthetic (no brand context)
+   - Use `frontend-design` for aesthetic if it is installed, else the `CLAUDE.md` taste rules (no brand context)
    - Write under `artifacts/examples/<kind>-<YYYYMMDD>/` instead of the top level of `artifacts/` (keeps demos inside the served root, but out of the user's real work)
    - Skip register-asset (demos shouldn't clutter `assets.html`)
 

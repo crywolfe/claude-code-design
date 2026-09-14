@@ -1,7 +1,7 @@
 ---
 description: End-of-turn handoff — preview, wait for ready, screenshot, snapshot DOM, sweep console, auto-register asset
 argument-hint: <html-path-or-url>
-allowed-tools: Bash(open file://:*) Bash(open http://127.0.0.1:*) Bash(xdg-open file://:*) Bash(xdg-open http://127.0.0.1:*) Bash(realpath:*) Bash(date:*) Bash(mkdir -p .claude) Bash(sleep:*) Read Write Edit mcp__chrome-devtools__navigate_page mcp__chrome-devtools__take_screenshot mcp__chrome-devtools__take_snapshot mcp__chrome-devtools__list_console_messages mcp__chrome-devtools__evaluate_script
+allowed-tools: Bash(open file://:*) Bash(open http://127.0.0.1:*) Bash(xdg-open file://:*) Bash(xdg-open http://127.0.0.1:*) Bash(realpath:*) Bash(date:*) Bash(mkdir -p .claude) Bash(sleep:*) Read Write Edit mcp__chrome-devtools__navigate_page mcp__chrome-devtools__take_screenshot mcp__chrome-devtools__take_snapshot mcp__chrome-devtools__list_console_messages mcp__chrome-devtools__list_network_requests mcp__chrome-devtools__evaluate_script
 ---
 
 End-of-turn gate: make sure the artifact at `$0` opens cleanly, capture evidence, and register the asset so it shows up in `assets.html`.
@@ -34,6 +34,7 @@ End-of-turn gate: make sure the artifact at `$0` opens cleanly, capture evidence
    This captures an accessibility tree with UIDs. Later turns can reference "the red button in the hero" and `/inspect` will resolve to a specific UID and then to source.
 
 5. List console messages: `mcp__chrome-devtools__list_console_messages` — filter by severity `error`.
+   One message is browser noise, not an artifact error: `Failed to load resource: the server responded with a status of 404` for `/favicon.ico` when previewing over `http://127.0.0.1`. Chrome requests the icon on its own and the `/serve` server has none. Confirm it is the favicon (the `/serve` background output logs `GET /favicon.ico ... 404`, or `mcp__chrome-devtools__list_network_requests`), then add `<link rel="icon" href="data:,"/>` to the artifact `<head>` so the request stops, and treat the sweep as clean. Every other 404 is a real missing asset.
 
 6. If any errors:
    - Report each with file location + message

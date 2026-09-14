@@ -59,7 +59,7 @@ make a 3-slide deck about the history of butter for a general audience, editoria
 Expected flow:
 
 1. `make-deck` skill fires on trigger ("deck", "slides")
-2. Phase 0: scans project for design tokens / attached files → reports "No context — using frontend-design for aesthetic direction". If the brief contained a GitHub/Figma URL, a document or an image, Claude lists it and **asks** before ingesting — nothing is cloned, fetched or installed without you saying yes
+2. Phase 0: scans project for design tokens / attached files → reports "No context — using frontend-design for aesthetic direction" (or "No context — using the CLAUDE.md taste rules" when that skill is not installed). If the brief contained a GitHub/Figma URL, a document or an image, Claude lists it and **asks** before ingesting — nothing is cloned, fetched or installed without you saying yes
 3. Phase 1: ambiguity gate — brief has length (3 slides), audience (general) and style (editorial) → gate passes → one or two quick `AskUserQuestion`s. A brief with only the length gets the full questionnaire
 4. Phase 1.5: speaker-notes heuristic — "history of butter / 3 slides" is short → decides **notes: off**
 5. Writes `artifacts/history-of-butter.html`, copies `starters/deck_stage.js` alongside

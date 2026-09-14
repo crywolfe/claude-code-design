@@ -150,6 +150,8 @@ In HTML artifacts that use React, use pinned versions with integrity hashes from
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 ```
 
+Add `<link rel="icon" href="data:,"/>` to the `<head>` of every artifact previewed over `http://127.0.0.1` (all React+Babel artifacts). Without it Chrome requests `/favicon.ico`, the `/serve` server answers 404, and `/done` sees a console `error` on an otherwise clean page.
+
 **Critical:** `const styles = {...}` is **forbidden** — global-name collisions break multi-file Babel compilation. Use component-prefixed names: `const terminalStyles`, `const cardStyles`. Inline styles are also fine.
 
 For multi-file components, export to `window`:

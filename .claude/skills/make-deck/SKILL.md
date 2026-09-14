@@ -28,8 +28,8 @@ If no context found after auto-detect, use `AskUserQuestion` with **a single que
 - **From codebase** — "paste a local path or github URL"
 - **From screenshot** — "attach an image"
 - **From Figma** — "paste a figma URL (needs FIGMA_TOKEN)"
-- **No context** — invoke `Skill: frontend-design` for aesthetic-from-scratch
-- **Decide for me** — Claude picks frontend-design
+- **No context** — invoke `Skill: frontend-design` for aesthetic-from-scratch if it is installed; otherwise proceed with the taste rules in `CLAUDE.md`
+- **Decide for me** — Claude picks frontend-design (same fallback: taste rules in `CLAUDE.md` when the skill is absent)
 
 Report what was found/chosen in one line: "Using <context>. Proceeding…"
 
@@ -74,7 +74,7 @@ Using context gathered in Phase 0, commit to a visual system up front:
 - Section-header layout, title layout, image layout
 - Max 1-2 background colors across the deck
 - Font hierarchy (display / H1 / body / caption)
-- Palette (pull from loaded tokens, or generated via `Skill: frontend-design`)
+- Palette (pull from loaded tokens, or generated via `Skill: frontend-design` when installed, else from the `CLAUDE.md` taste rules)
 
 Vocalize the system in one paragraph before writing slides.
 

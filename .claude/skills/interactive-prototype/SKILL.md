@@ -42,7 +42,7 @@ If platform + category present → max 2 clarifying questions. Otherwise `AskUse
 Using context from Phase 0, commit to a mobile-aware system:
 - Min 44px hit targets on mobile
 - Consistent spacing / type scale from loaded tokens
-- If no tokens → invoke `Skill: frontend-design`
+- If no tokens → invoke `Skill: frontend-design` if it is installed; otherwise proceed with the taste rules in `CLAUDE.md`
 
 ## Phase 3 — Build
 
@@ -53,6 +53,7 @@ Using context from Phase 0, commit to a mobile-aware system:
    <head>
      <meta charset="utf-8"/>
      <title>{{name}}</title>
+     <link rel="icon" href="data:,"/>
      <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
      <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
      <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
@@ -84,7 +85,7 @@ Using context from Phase 0, commit to a mobile-aware system:
 
 ## Phase 4 — Verify
 
-**Important:** because this artifact loads external `.jsx` starters, `file://` will hit CORS errors. Run `/serve` first (one-time), then preview via http:
+**Important:** because this artifact loads external `.jsx` starters, `file://` will hit CORS errors. Run `/serve` first (one-time), then preview via http. Keep the `<link rel="icon" href="data:,"/>` from the shell: over http Chrome otherwise requests `/favicon.ico`, the server answers 404, and that lands in the console as an `error` that `/done` would report against a clean artifact.
 
 ```
 /serve

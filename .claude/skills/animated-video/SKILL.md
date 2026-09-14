@@ -44,7 +44,7 @@ Uses the Remotion-compatible in-browser engine in `starters/animations.jsx`. Sam
 
 **Steps:**
 
-1. Invoke `Skill: frontend-design` for aesthetic direction
+1. Invoke `Skill: frontend-design` for aesthetic direction if it is installed; otherwise proceed with the taste rules in `CLAUDE.md`
 2. Create `artifacts/<slug>.html` with React + Babel + `animations.jsx`
 3. `Bash(cp starters/animations.jsx artifacts/<dir-of-html>/)` — copy starter next to the HTML, spelling the directory out literally (no `$(dirname …)`)
 4. Run `/serve` (required for external `.jsx` CORS)
