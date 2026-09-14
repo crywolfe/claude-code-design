@@ -13,9 +13,12 @@ The second constraint is already met: this workspace runs in the **Claude Code C
 never depended on Claude Desktop. The features that do touch claude.ai are listed below and
 degrade to "unavailable" rather than breaking the rest.
 
-Facts marked *(docs)* were checked against the Claude Code documentation on 2026-09-08 by a
-documentation-lookup agent. Facts marked *(verify)* were **not** found in the documentation and
-must be confirmed before anything is built on them. Documentation URLs are at the end.
+Facts marked *(docs)* were checked against the Claude Code documentation by a
+documentation-lookup agent on 2026-09-08, with a second pass on 2026-09-11 that resolved most
+of the items previously marked *(verify)*. Two *(verify)* notes remain: the bypass-mode
+behaviour of deny rules and hook denies in §3, which the agent could only source from search
+snippets, and the plugin-cache carve-out in §3, which depends on the client's environment.
+Documentation URLs are at the end.
 
 ---
 
@@ -26,12 +29,12 @@ must be confirmed before anything is built on them. Documentation URLs are at th
 | Distribution | Clone or "Use this template" | `/plugin install` from a marketplace, `--plugin-dir <path>` for local testing, `--plugin-url` for a remote zip *(docs)* |
 | Manifest | none | `.claude-plugin/plugin.json` at the plugin root; required fields `name`, `description`; optional `version`, `author`, `homepage`, `repository`, `license` *(docs)* |
 | Skills, commands | `.claude/skills/*`, `.claude/commands/*` | `skills/`, `commands/` at the plugin root, **outside** `.claude-plugin/` *(docs)* |
-| Hooks | registered in `.claude/settings.json`, scripts under `.claude/hooks/`, referenced as `"$CLAUDE_PROJECT_DIR"/.claude/hooks/…` | `hooks/hooks.json` at the plugin root *(docs)*. How a plugin hook references its own script (a plugin-root variable) is **not documented** in the pages checked *(verify)* |
+| Hooks | registered in `.claude/settings.json`, scripts under `.claude/hooks/`, referenced as `"$CLAUDE_PROJECT_DIR"/.claude/hooks/…` | `hooks/hooks.json` at the plugin root *(docs)*. A hook references its own script through `"${CLAUDE_PLUGIN_ROOT}"/hooks/guard-bash.sh`, the absolute path of the plugin's installation directory, quoted in shell-form hooks *(docs)* |
 | MCP server | `.mcp.json` in the project | `.mcp.json` at the plugin root *(docs)* |
 | Permission deny list | `permissions.deny` in `.claude/settings.json` | **Plugins cannot ship permission rules** *(docs)*. The deny list must be delivered another way, see §3 |
-| Default settings | n/a | a plugin may ship a `settings.json` *(docs)*; whether it may carry `permissions` is **not documented** *(verify)* |
+| Default settings | n/a | a plugin may ship a `settings.json`, but only the `agent` and `subagentStatusLine` keys are honoured, so it cannot carry `permissions` *(docs)* |
 | CLAUDE.md policy | project `CLAUDE.md` | not a plugin component; ship it as a skill's instructions or ask the client to add it to their project or managed `CLAUDE.md` |
-| Starters, export scripts | `starters/`, `scripts/*.mjs` | plugin root; the guard's `node` allowlist must be rewritten to the plugin path *(verify: depends on the hook-path variable above)* |
+| Starters, export scripts | `starters/`, `scripts/*.mjs` | plugin root; the guard's `node` allowlist must be rewritten to `${CLAUDE_PLUGIN_ROOT}/scripts/…` and the self-test extended for it |
 
 ### Why the deny list matters more than it looks
 
@@ -58,6 +61,13 @@ export, ingest and browser skills until it is present.
 Claude Code selects the provider with one environment flag; everything in this workspace
 is provider-agnostic because it never calls the model API itself, it only runs inside
 Claude Code. *(docs, all rows)*
+
+This is the reason the workspace exists. Claude Code's built-in `/design` command and the
+artifact platform it publishes to require a claude.ai session on the Anthropic API; the
+docs list both as unavailable on Amazon Bedrock, Google Vertex AI, Microsoft Foundry and
+Claude Platform on AWS *(docs, artifacts.md and commands.md, checked 2026-09-12)*. A client
+on those endpoints has no supported path to Claude Design output from Claude Code, and this
+workspace, or the plugin proposed here, is that path.
 
 | Provider | Enable | Endpoint / region | Auth | Model names |
 |---|---|---|---|---|
@@ -93,12 +103,18 @@ agreement, not Anthropic's *(docs)*.
 
 - macOS: `/Library/Application Support/ClaudeCode/managed-settings.json`
 - Linux: `/etc/claude-code/managed-settings.json`
-- Windows: under Program Files; exact path **not documented** in the pages checked *(verify)*
+- Windows: `C:\Program Files\ClaudeCode\managed-settings.json`
 
 Precedence is managed → user (`~/.claude/settings.json`) → project (`.claude/settings.json`)
 → `--settings` flag, and managed settings can force hooks, restrict MCP servers and set
-`permissions` *(docs)*. Whether managed settings can block `--dangerously-skip-permissions`
-is **not documented** *(verify)*.
+`permissions` *(docs)*. Deny rules, and hooks that return a deny decision, are reported to
+block the tool in every permission mode, including `bypassPermissions` and
+`--dangerously-skip-permissions` *(verify: this comes from search snippets only; confirm it
+on the permission-modes page, section "Skip all checks with bypassPermissions mode", before
+an auditor relies on it)*. Managed settings can also disable that mode outright with
+`permissions.disableBypassPermissionsMode`, listed in the settings reference as "Prevent
+anyone from entering bypassPermissions mode" *(docs; the reference does not state the value
+type, so confirm the accepted value in the client's Claude Code version)*.
 
 Proposed split:
 
@@ -161,8 +177,8 @@ No other outbound call exists in the committed skills. `wget`, `nc`, `ssh`, `scp
    `artifacts/hardening-patch/README.md`). Nothing below should start before this.
 2. Restructure into plugin layout: move `.claude/skills` → `skills/`, `.claude/commands` →
    `commands/`, hooks → `hooks/` with `hooks/hooks.json`, add `.claude-plugin/plugin.json`.
-   Resolve the hook script path variable *(verify)* and update `guard-bash.sh`'s `node`
-   and `python3` allowlists to the new paths, with self-test cases for each.
+   Reference hook scripts as `"${CLAUDE_PLUGIN_ROOT}"/hooks/…` and update `guard-bash.sh`'s
+   `node` and `python3` allowlists to the new paths, with self-test cases for each.
 3. Write `managed-settings.reference.json` (the deny list) and teach `/doctor` to diff the
    effective settings against it and refuse to proceed on mismatch.
 4. Make `publish` and `sync-design-system` detect an unavailable Artifact/DesignSync tool and
@@ -170,19 +186,27 @@ No other outbound call exists in the committed skills. `wget`, `nc`, `ssh`, `scp
 5. Vendor or mirror `chrome-devtools-mcp@1.9.0` for clients without npm registry egress.
 6. Test on one Foundry deployment and one Bedrock inference profile; record the exact
    env-var set used in this document.
-7. Publish to a private marketplace; pin the plugin version in the client's managed settings
-   *(verify: enterprise pinning is not documented in the plugins page checked)*.
+7. Publish to a private marketplace. Pin the release in the marketplace entry (`version`, or
+   `ref` plus `sha` for a git source; `sha` is the effective pin) and install it with managed
+   scope, which administrators set through managed settings and users cannot change *(docs)*.
 
 ---
 
-## Documentation checked (2026-09-08)
+## Documentation checked (2026-09-08, second pass 2026-09-11, `/design` check 2026-09-12)
 
+- https://code.claude.com/docs/en/artifacts.md (`/design` canvas; provider and login requirements)
+- https://code.claude.com/docs/en/commands.md (`/design` unavailable on Bedrock, Vertex AI, Foundry, Claude Platform on AWS)
 - https://code.claude.com/docs/en/plugins.md
-- https://code.claude.com/docs/en/plugins-reference.md (not fetched; full manifest schema)
+- https://code.claude.com/docs/en/plugins-reference.md (`${CLAUDE_PLUGIN_ROOT}`)
+- https://code.claude.com/docs/en/plugin-marketplaces.md (`version`, `ref`, `sha` pinning)
+- https://code.claude.com/docs/en/discover-plugins.md (managed scope)
+- https://code.claude.com/docs/en/admin-setup.md (Windows managed-settings path)
+- https://code.claude.com/docs/en/settings-reference.md (`permissions.disableBypassPermissionsMode`)
+- https://code.claude.com/docs/en/permission-modes.md (bypass-mode behaviour of deny rules and hook denies; not yet confirmed on the page)
 - https://code.claude.com/docs/en/microsoft-foundry.md
 - https://code.claude.com/docs/en/amazon-bedrock.md
 - https://code.claude.com/docs/en/google-vertex-ai.md
 - https://code.claude.com/docs/en/third-party-integrations.md
 - https://code.claude.com/docs/en/feature-availability.md
 - https://code.claude.com/docs/en/managed-settings.md
-- https://code.claude.com/docs/en/hooks.md (not fetched; full PreToolUse schema and exit codes)
+- https://code.claude.com/docs/en/hooks.md (full PreToolUse schema and exit codes not re-checked)

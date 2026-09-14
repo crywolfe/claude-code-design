@@ -1,6 +1,6 @@
 # Claude Design parity
 
-What Anthropic Labs' Claude Design (claude.ai/design) offers as of September 2026, and how this repo maps each feature. Researched from Anthropic's announcement and docs plus the Claude Code tool surface (`Artifact`, `DesignSync`) on 2026-09-08. Where the mechanics of a Claude Design feature are not public, the local equivalent is marked *approximation* — it aims at the same outcome, not the same internals.
+What Anthropic Labs' Claude Design (claude.ai/design) offers as of September 2026, and how this repo maps each feature. Researched from Anthropic's announcement and docs plus the Claude Code tool surface (`Artifact`, `DesignSync`) on 2026-09-08, with the built-in `/design` command checked on 2026-09-12. Where the mechanics of a Claude Design feature are not public, the local equivalent is marked *approximation* — it aims at the same outcome, not the same internals.
 
 ## Status legend
 
@@ -16,6 +16,7 @@ What Anthropic Labs' Claude Design (claude.ai/design) offers as of September 202
 | Decks, prototypes, wireframes, motion, design systems | Reproduced | `/make-deck`, `/interactive-prototype`, `/wireframe`, `/animated-video`, `/create-design-system` |
 | Ingest a codebase, screenshot, or Figma file | Reproduced (ask-first) | `/ingest-github`, `/ingest-screenshot`, `/ingest-figma` |
 | Ingest DOCX / PPTX / XLSX / PDF | Reproduced | `/ingest-document` — office theme XML via `unzip -p`, PDF via vision; no dependencies |
+| Built-in `/design` command (artboards on a canvas, published as a claude.ai artifact running the Claude Design editor; direct element editing, saved versions, PNG / PDF export) | Skipped by design | Official Claude Code command, v2.1.234+, Anthropic API and claude.ai login only; the docs list it as unavailable on Bedrock, Vertex AI, Foundry and Claude Platform on AWS. This repo targets exactly those environments, so it does not wrap or replace `/design`. On the Anthropic API, use `/design` for hand-editable mockups and this repo for decks, exports and handoff. Checked 2026-09-12 against code.claude.com/docs/en/artifacts.md and commands.md. |
 | Web-page capture as reference | Skipped | Contradicts the committed Browser-scope rule (Chrome DevTools MCP only visits `artifacts/` and `127.0.0.1`). Take a screenshot yourself and use `/ingest-screenshot`. |
 | Share link + comments + replies | Reproduced | `/publish` wraps the `Artifact` tool: private URL, `comments` / `reply` / `resolve` / `watch`. Requires a self-contained artifact; the skill inlines siblings and rewrites CDNs. |
 | Version history | Adapted | `/snapshot <html> <label>` → `artifacts/versions/<name>/`; `/publish --label` names the same version on the shared page |
