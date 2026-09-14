@@ -274,6 +274,7 @@ Produced and maintained automatically; no explicit user action required.
 | `/done <path-or-url>` | End-of-turn gate. `/preview` + async await for `document.readyState === 'complete'` + `document.fonts.ready` (2s race). Screenshot → `.claude/last-preview.png`. DOM snapshot → `.claude/last-snapshot.txt` (the MCP writes plain text whatever extension is requested). Console sweep for errors. On clean, auto-invokes `/register-asset --auto` with group inferred from content (`<deck-stage>` → Brand; `<DeviceFrame>` / `<DesignCanvas>` → Components; `data-design-group` attrs → per-section) |
 | `/register-asset` | Upserts entry in `design-assets.json`, reuses `.claude/last-preview.png` as thumbnail when `--auto`, regenerates `assets.html` via `scripts/make-assets-index.mjs` |
 | `assets.html` | Auto-generated grid, grouped by Type / Colors / Spacing / Components / Brand. Cards show thumbnail, name, subtitle, status badge (needs-review / approved / changes-requested), updated date. The persistent workspace, equivalent of Claude Design's Recent tab |
+| `/local-comments <html>` | Read-only. Lists `artifacts/edits/<session>/comments.yaml` entries (written by Shift+C in a `/make-editable` preview) with source line numbers. `clear` sub-command archives them to `applied/<ts>-comments.yaml` |
 
 ### Sharing
 

@@ -32,6 +32,7 @@ For any design task, invoke the matching skill:
 | "live reload", "auto refresh the preview", "hot reload" | `/live-reload` |
 | "make it editable", "click to edit", "edit mode" | `/make-editable` |
 | "apply edits", "save edits" | `/apply-edits` |
+| "any local comments?", "what did I comment?" | `/local-comments` |
 | "show me an example deck", "I want to see a reference prototype" | `/copy-example` |
 
 For aesthetic direction without brand context, invoke `Skill: frontend-design` if it is installed; otherwise proceed with the taste rules in this file. No third-party plugin is required.
