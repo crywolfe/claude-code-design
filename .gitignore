@@ -18,6 +18,9 @@ dist/
 .claude/.serve.pid
 .claude/answers.json
 
+# Git worktrees created by Claude Code (each is its own checkout, never an embedded repo)
+.claude/worktrees/
+
 # Tweaks session state (contains per-session yaml)
 # (artifacts/tweaks/ is already covered by artifacts/)
 
