@@ -121,16 +121,15 @@
   .h2sub { margin: 0 0 18px; color: var(--ink-2); max-width: 70ch; }
 
   /* schematic */
-  .schematic { overflow-x: auto; padding: 2px 0 10px; }
-  .zones { display: grid; grid-template-columns: minmax(0,1fr) 126px minmax(0,1.02fr) 126px minmax(0,1.3fr) 126px minmax(0,1.14fr) 126px minmax(0,1fr); min-width: 1360px; align-items: stretch; }
+  .schematic { padding: 2px 0 10px; }
+  .zones { display: flex; flex-direction: column; }
   .zone { background: var(--paper); border: 1.5px solid var(--rule); border-top: 5px solid var(--zc); display: flex; flex-direction: column; }
-  .zone header { padding: 12px 14px 10px; border-bottom: 1px solid var(--rule-2); }
-  .zone header .lvl { font: 600 10px/1.4 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--zc); margin-bottom: 6px; }
-  .zone header h3 { margin: 0 0 4px; font: 700 17px/1.15 var(--display); letter-spacing: -0.01em; }
+  .zone header { padding: 12px 16px 10px; border-bottom: 1px solid var(--rule-2); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+  .zone header .lvl { font: 600 10px/1.4 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--zc); }
+  .zone header h3 { margin: 0; font: 700 17px/1.15 var(--display); letter-spacing: -0.01em; }
   .zone header p { margin: 0; font-size: 13px; color: var(--ink-2); font-style: italic; }
-  .zone ul { list-style: none; margin: 0; padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .zone ul { list-style: none; margin: 0; padding: 12px 16px 14px; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px 24px; }
   .zone li { font-size: 13.5px; line-height: 1.4; padding: 0 0 8px; border-bottom: 1px solid var(--rule-2); }
-  .zone li:last-child { border-bottom: 0; padding-bottom: 0; }
   .zone li b { font-weight: 600; font-family: var(--display); font-size: 13px; }
   .zone li .p { display: block; font: 400 11.5px/1.5 var(--mono); color: var(--ink-3); margin-top: 3px; overflow-wrap: anywhere; }
   .zone li.policy { padding-left: 10px; border-left: 2px dashed var(--policy); }
@@ -144,16 +143,16 @@
   .z-local { --zc: var(--zone-local); }
   .z-external { --zc: var(--zone-external); }
 
-  .gate { display: flex; flex-direction: column; justify-content: center; gap: 16px; padding: 12px 8px; }
-  .edge { font: 400 11px/1.35 var(--mono); color: var(--ink-2); text-align: center; overflow-wrap: anywhere; }
-  .edge .ln { position: relative; height: 0; border-top: 2.5px solid var(--accent); margin: 5px 6px 6px; }
-  .edge .ln::after { content: ""; position: absolute; right: -2px; top: -5.5px; border: 4px solid transparent; border-left: 7px solid var(--accent); }
-  .edge .ln.left::after { right: auto; left: -2px; border-left: 4px solid transparent; border-right: 7px solid var(--accent); }
-  .edge .ln.both::before { content: ""; position: absolute; left: -2px; top: -5.5px; border: 4px solid transparent; border-right: 7px solid var(--accent); }
-  .edge.pol .ln { border-top-style: dashed; border-top-color: var(--policy); }
-  .edge.pol .ln::after { border-left-color: var(--policy); }
-  .edge.pol .ln.left::after { border-left-color: transparent; border-right-color: var(--policy); }
-  .edge.pol .ln.both::before { border-right-color: var(--policy); }
+  .gate { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 8px 32px; padding: 10px 8px; }
+  .edge { display: flex; flex-direction: column; align-items: center; font: 400 11px/1.35 var(--mono); color: var(--ink-2); text-align: center; max-width: 220px; }
+  .edge .ln { position: relative; width: 0; height: 22px; border-left: 2.5px solid var(--accent); margin: 4px 0 0; }
+  .edge .ln::after { content: ""; position: absolute; left: -5.25px; bottom: -2px; border: 4px solid transparent; border-bottom: 0; border-top: 7px solid var(--accent); }
+  .edge .ln.left::after { bottom: auto; top: -2px; border-top: 0; border-bottom: 7px solid var(--accent); }
+  .edge .ln.both::before { content: ""; position: absolute; left: -5.25px; top: -2px; border: 4px solid transparent; border-top: 0; border-bottom: 7px solid var(--accent); }
+  .edge.pol .ln { border-left-style: dashed; border-left-color: var(--policy); }
+  .edge.pol .ln::after { border-top-color: var(--policy); }
+  .edge.pol .ln.left::after { border-bottom-color: var(--policy); }
+  .edge.pol .ln.both::before { border-bottom-color: var(--policy); }
 
   /* rules table */
   .tw { overflow-x: auto; background: var(--paper); border: 1.5px solid var(--rule); }
@@ -265,7 +264,7 @@
     </header>
     <ul>
       <li><b>settings.json deny list</b><span class="p">Write/Edit: .claude/hooks/** · settings*.json · .mcp.json · scripts/** · .git/**<br>Read: ~/.claude/** (side effect: auto-memory is off)<br>Bash: destructive, network and pipe-to-shell patterns</span></li>
-      <li><b>guard-bash.sh</b> · PreToolUse on all Bash<span class="p">quote-aware split into segments · per-segment allowlists for curl, node, python3, open, rm, zip, unzip, gh, git · no shells, interpreters, wrappers, package managers, sed -i, tee, kill · no $( ), backticks, .. · redirects only to /dev/null · path arguments of cp mv mkdir zip monolith node gh git inside the project and off protected files · no credential or dotfile paths</span></li>
+      <li><b>guard-bash.sh</b> · PreToolUse on all Bash<span class="p">splits the command into segments and checks each · allowlists for curl, node, python3, open, rm, zip, unzip, gh, git · no shells, interpreters, wrappers or package managers · redirects only to /dev/null · path arguments inside the project and off protected files</span></li>
       <li><b>guard-browser.py</b> · PreToolUse on <code>navigate_page</code>, <code>new_page</code>, <code>evaluate_script</code>, both Chrome DevTools servers<span class="p">file:// realpath under the project, excluding .claude/ .git/ node_modules/ · http://127.0.0.1 only · initScript refused · filePath refused · NET_RE text filter on the script</span></li>
       <li><b>Self-test</b> · 287 cases, all passing<span class="p">the one bash invocation the guard allows</span></li>
     </ul>
@@ -343,7 +342,7 @@
 </div>
 
 <h2>Findings register</h2>
-<p class="h2sub">What the code reviewer confirmed against the committed hooks, and what stays open on purpose. Severity is the reviewer's. Status is where the fix stands today, which for most rows means written, not applied.</p>
+<p class="h2sub">Bugs the code reviewer found in this repo's own guard hooks and settings, not in Claude Code itself, plus the residual risks accepted by design. G rows are bugs with a fix pending. R rows are limits that stay by design. Severity is the reviewer's. Status is where the fix stands today, which for most rows means written, not applied.</p>
 <div class="tw">
 <table class="register">
   <thead><tr><th>ID</th><th>Finding</th><th>Severity</th><th>Status</th></tr></thead>
