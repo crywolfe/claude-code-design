@@ -27,6 +27,7 @@ What Anthropic Labs' Claude Design (claude.ai/design) offers as of September 202
 | Sync a component library to a Claude Design project | Bridged | `/sync-design-system <name>` uses the `DesignSync` tool (list → plan → approve → write). Only in Claude Code builds that ship `DesignSync`; the write flow is untested (see below). |
 | Multi-artboard canvas (`.dc.html` + manifest) | Skipped | Depends on Claude Design's editor payload. `/wireframe` keeps `<DesignCanvas>` cells; `handoff.json` records artboards so a developer sees the same structure. |
 | Click-to-comment on elements | Adapted | `/inspect "<description>"` via DOM snapshot UIDs |
+| Direct element editing (text, style, hide) | Approximation | `/make-editable` overlay (Shift+E) buffers edits to `pending.yaml`; `/apply-edits` validates against an allowlist and writes text, a generated `<style id="__edits">` block (`!important` rules, identical to the live preview), and `hidden`. Static HTML only; no drag or resize. |
 | Live canvas preview | Adapted | `/preview` + `/done` through Chrome DevTools MCP (seconds, not sub-second); `/live-reload` refreshes the preview on save (sub-second reload, but each change still goes through an agent turn) |
 | Multiplayer / org sharing controls / connectors (Slack, Drive, …) | Skipped | Properties of claude.ai, not of a local repo. `/publish` pages start private; share the link yourself. |
 | Sub-second render loop, canvas sketch pad | Skipped | Not reproducible in a terminal |

@@ -30,6 +30,8 @@ For any design task, invoke the matching skill:
 | "use the X design system", "apply brand X", "make X the default", "lock X" | `/use-design-system` |
 | "change the red button", "that card in the hero", element-reference without selector | `/inspect` |
 | "live reload", "auto refresh the preview", "hot reload" | `/live-reload` |
+| "make it editable", "click to edit", "edit mode" | `/make-editable` |
+| "apply edits", "save edits" | `/apply-edits` |
 | "show me an example deck", "I want to see a reference prototype" | `/copy-example` |
 
 For aesthetic direction without brand context, invoke `Skill: frontend-design` if it is installed; otherwise proceed with the taste rules in this file. No third-party plugin is required.
@@ -140,6 +142,8 @@ The Tweaks panel in an artifact live-updates CSS variables, but **does not write
 5. Truncates `pending.yaml`, updates `state.yaml`
 
 Never edit the HTML without an explicit user request — the panel only buffers changes.
+
+The same pattern applies to click-to-edit: `artifacts/edits/<session>/pending.yaml` → `/apply-edits`.
 
 ## React + Babel contract
 
