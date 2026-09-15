@@ -28,6 +28,7 @@ Reproduces Claude Design's share link + comment loop with the built-in `Artifact
    - `https://unpkg.com/<pkg>@<ver>/<path>` → `https://cdn.jsdelivr.net/npm/<pkg>@<ver>/<path>` in the published copy only (same bytes, same `integrity` hash; the local artifact keeps unpkg so the export scripts still accept it).
    - Any other remote `<script>`/`<link>`/`<img>` origin → tell the user it will not load on the published page; inline as data URI or drop.
    - A `<link rel="stylesheet">` to anything but Google Fonts → inline it.
+   - Any `<script … data-dev-only>` tag (live reload, editor overlay, sketch pad) is removed from the copy before bundling, and its sibling file is not copied. These are preview-time tools, not part of the design.
 4. The Artifact host wraps the file in its own `<!doctype html><html><head>…</head><body>` skeleton. Strip `<!doctype>`, `<html>`, `<head>`, `<body>` wrapper tags; keep `<title>` and `<style>` at the very top, then the body markup, then scripts.
 5. Add theme tokens if the page hard-codes a light background only: the viewer renders in the reader's theme. At minimum give `body` an explicit background color.
 6. Runtime capabilities are **off**. Publish with no `capabilities` argument (a static page: no shared database, no live data, no in-page Claude, no file store). If the user explicitly asks for one of those, load the `artifact-capabilities` skill first and treat it as a separate change to the page — never add a capability as a side effect of a redeploy.

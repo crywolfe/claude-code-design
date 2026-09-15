@@ -29,6 +29,10 @@ For any design task, invoke the matching skill:
 | first time in project / "setup" / "setup deps" | `/doctor` |
 | "use the X design system", "apply brand X", "make X the default", "lock X" | `/use-design-system` |
 | "change the red button", "that card in the hero", element-reference without selector | `/inspect` |
+| "live reload", "auto refresh the preview", "hot reload" | `/live-reload` |
+| "make it editable", "click to edit", "edit mode" | `/make-editable` |
+| "apply edits", "save edits" | `/apply-edits` |
+| "any local comments?", "what did I comment?" | `/local-comments` |
 | "show me an example deck", "I want to see a reference prototype" | `/copy-example` |
 
 For aesthetic direction without brand context, invoke `Skill: frontend-design` if it is installed; otherwise proceed with the taste rules in this file. No third-party plugin is required.
@@ -140,6 +144,8 @@ The Tweaks panel in an artifact live-updates CSS variables, but **does not write
 
 Never edit the HTML without an explicit user request — the panel only buffers changes.
 
+The same pattern applies to click-to-edit: `artifacts/edits/<session>/pending.yaml` → `/apply-edits`.
+
 ## React + Babel contract
 
 In HTML artifacts that use React, use pinned versions with integrity hashes from unpkg (the only script host the export scripts allow; `/publish` rewrites these to jsdelivr, which serves the same bytes under the same hashes, because published pages cannot load unpkg):
@@ -196,6 +202,10 @@ The old `deck v2.html` side-by-side copy still works (`Bash(cp artifacts/<a> art
 ### Design-system governance
 
 `design-systems/<name>/manifest.json` carries `default` (loaded when no name is given), `locked` (never overwritten; remix instead) and `version`. `verify-artifact` checks computed colors / fonts / radii against the loaded `.claude/design-tokens.json` and reports drift as P1/P2 — it never auto-fixes unless asked.
+
+### Repo remotes (working on this tool's own codebase)
+
+This checkout has two remotes: `origin` (`crywolfe/claude-code-design` — the fork; target for pushes and PRs) and `upstream` (`bluzir/claude-code-design` — read-only, the original repo). `gh`'s default-repo resolution is ambiguous with two remotes present and has silently picked `upstream` in practice. Always pass `--repo crywolfe/claude-code-design` explicitly on `gh pr create`, `gh issue create`, and similar — never rely on `gh`'s inferred default. `git push`/`git pull` without a remote argument are unaffected (they follow the current branch's configured upstream, which `git push -u origin <branch>` sets correctly).
 
 ## Asking good questions
 
