@@ -155,13 +155,12 @@ check allow 'node "${CLAUDE_PLUGIN_ROOT}"/scripts/export-pdf.mjs artifacts/deck.
 check allow 'node "${CLAUDE_PLUGIN_ROOT}"/scripts/export-pdf.mjs "artifacts/deck.html" "artifacts/deck.pdf"'
 check allow 'node "${CLAUDE_PLUGIN_ROOT}"/scripts/export-pptx.mjs "artifacts/deck v2.html" out.pptx'
 check allow 'node "${CLAUDE_PLUGIN_ROOT}"/scripts/make-assets-index.mjs'
-# KNOWN-DIVERGENT: re_node_ok's --check branch matches this text, but the path-arguments loop's
-# start=2 offset (which assumes token 1 is always the plugin script path) checks token 2 here --
-# which for the --check form IS the script path -- against path_ok in "node" (non-READ) mode, and
-# path_ok's "${CLAUDE_PLUGIN_ROOT}"/* case denies unconditionally. So this case is expected to FAIL
-# (denied) against the guard exactly as transcribed from the spec's Edit F. See the report for the
-# full trace; this is flagged, not silently fixed, per instructions to transcribe Edit F verbatim.
-check allow 'node --check "${CLAUDE_PLUGIN_ROOT}"/scripts/export-pdf.mjs'
+# --check was reported as a bug (start=2 in the path-arguments loop assumes token 1 is always the
+# plugin script path, false for `--check <script>`, which would misfire path_ok on the real script
+# path) and a second gap (the --check branch didn't restrict the filename to the three real export
+# scripts). Fixed by dropping --check support entirely from re_node_ok rather than adding offset
+# logic for a form nothing in the documented workflow uses -- so it's simply unsupported now.
+check block 'node --check "${CLAUDE_PLUGIN_ROOT}"/scripts/export-pdf.mjs'
 check allow 'cp "${CLAUDE_PLUGIN_ROOT}"/starters/deck_stage.js artifacts/'
 check allow 'cp "${CLAUDE_PLUGIN_ROOT}"/starters/animations.jsx artifacts/proto/'
 check allow 'bash "${CLAUDE_PLUGIN_ROOT}"/hooks/test-guard.sh'
@@ -177,11 +176,6 @@ check block 'mv artifacts/deck.html "${CLAUDE_PLUGIN_ROOT}"/starters/deck_stage.
 check block 'mkdir -p "${CLAUDE_PLUGIN_ROOT}"/scripts'
 check block 'cat "${CLAUDE_PLUGIN_ROOT}"/hooks/guard-bash.sh'
 check block 'node "${CLAUDE_PLUGIN_ROOT}"/scripts/export-pdf.mjs "${CLAUDE_PLUGIN_ROOT}"/scripts/export-pptx.mjs'
-# KNOWN-DIVERGENT (companion to the flagged allow case above): re_node_ok's --check branch accepts
-# ANY "${CLAUDE_PLUGIN_ROOT}"/scripts/<name>.mjs, not just the three real export scripts -- the
-# filename restriction that the plain-execution branch enforces is missing from the --check
-# alternative. This command is still blocked in practice, but only as a side effect of the same
-# start=2 path-loop bug flagged above, not because the interpreter check itself rejects the name.
 check block 'node --check "${CLAUDE_PLUGIN_ROOT}"/scripts/exploit.mjs'
 
 # ============================================================ bash guard: must block

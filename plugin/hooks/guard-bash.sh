@@ -173,8 +173,12 @@ while IFS= read -r seg || [[ -n "$seg" ]]; do
   # ---- interpreters: node and python3 only for the documented invocations
   re_node="${W}(node|nodejs)([[:space:]]|$)"
   if [[ "$bare" =~ $re_node ]]; then
-    re_node_ok='^[[:space:]]*node[[:space:]]+("?\$\{CLAUDE_PLUGIN_ROOT\}"?/scripts/(export-pdf|export-pptx|make-assets-index)\.mjs([[:space:]]|$)|--check[[:space:]]+"?\$\{CLAUDE_PLUGIN_ROOT\}"?/scripts/[A-Za-z0-9_-]+\.mjs[[:space:]]*$|(--version|-v)[[:space:]]*$)'
-    if ! [[ "$bare" =~ $re_node_ok ]]; then deny 'node: only "${CLAUDE_PLUGIN_ROOT}"/scripts/export-pdf.mjs, export-pptx.mjs, make-assets-index.mjs, --check "${CLAUDE_PLUGIN_ROOT}"/scripts/<file>.mjs, --version'; fi
+    # --check is deliberately not supported here: the path-arguments loop below assumes token 1 is
+    # always the plugin script path (true for plain execution, false for `--check <script>`, which
+    # would need its own offset logic to avoid re-validating the script path against path_ok and
+    # denying it). Nothing in the documented workflow needs --check, so the form is simply dropped.
+    re_node_ok='^[[:space:]]*node[[:space:]]+("?\$\{CLAUDE_PLUGIN_ROOT\}"?/scripts/(export-pdf|export-pptx|make-assets-index)\.mjs([[:space:]]|$)|(--version|-v)[[:space:]]*$)'
+    if ! [[ "$bare" =~ $re_node_ok ]]; then deny 'node: only "${CLAUDE_PLUGIN_ROOT}"/scripts/export-pdf.mjs, export-pptx.mjs, make-assets-index.mjs, --version'; fi
   fi
   re_py="${W}python[0-9.]*([[:space:]]|$)"
   if [[ "$bare" =~ $re_py ]]; then

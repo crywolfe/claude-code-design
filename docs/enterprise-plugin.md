@@ -212,9 +212,9 @@ No other outbound call exists in the committed skills. `wget`, `nc`, `ssh`, `scp
    — both must exit clean before anything else below is meaningful.
 7. `bash plugin/hooks/test-guard.sh` and confirm **0 failed** against **403 cases** (103
    must-allow, 258 must-block, 42 browser-guard; verified via
-   `rg -c '^b?check ' plugin/hooks/test-guard.sh`). As shipped this will show **1 known
-   failure**, not 0 — see `plugin/README.md`'s "Known issues" section for the exact case and
-   why it was left flagged rather than silently patched.
+   `rg -c '^b?check ' plugin/hooks/test-guard.sh`). A `node --check` gap was found and fixed
+   during this build (support for that flag was dropped from `re_node_ok` rather than patched)
+   — see `plugin/README.md`'s "Known issues" section for the history.
 8. Confirm `plugin/.claude-plugin/plugin.json` is valid JSON with at least `name` set, and
    that `plugin/hooks/hooks.json` wires both guards through `"${CLAUDE_PLUGIN_ROOT}"/hooks/…`.
 9. Confirm a managed-settings deny list (`plugin/managed-settings.reference.json` or

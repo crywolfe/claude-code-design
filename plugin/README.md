@@ -83,34 +83,28 @@ bash plugin/hooks/test-guard.sh
 
 `plugin/hooks/test-guard.sh` currently defines **403 cases** (103 must-allow bash cases, 258
 must-block bash cases, 42 browser-guard cases — verified via `rg -c '^b?check ' plugin/hooks/test-guard.sh`
-against the file as committed). It should print `403 cases, 0 failed`. It will not, currently: this
-build knowingly ships **one flagged, unresolved case** — see "Known issues" below — so expect exactly
-one `FAIL` line for `node --check "${CLAUDE_PLUGIN_ROOT}"/scripts/export-pdf.mjs` until that is fixed
-upstream in `guard-bash.sh`.
+against the file as committed). It should print `403 cases, 0 failed`.
 
-## Known issues (flagged, not silently patched)
+## Known issues (flagged, not silently patched, then fixed)
 
 This plugin's `guard-bash.sh` and `test-guard.sh` were built by transcribing a specified set of edits
 onto the already-hardened `artifacts/hardening-patch/guard-bash.sh` base, exactly as given, without
-redesigning the given logic. Two internal inconsistencies surfaced while doing this and were
-deliberately left in place rather than silently "fixed," so a human reviewer can decide:
+redesigning the given logic. Two internal inconsistencies surfaced while doing this and were initially
+left in place, flagged rather than silently "fixed," for a human reviewer to decide:
 
-1. **`node --check "${CLAUDE_PLUGIN_ROOT}"/scripts/<file>.mjs` is denied even though the interpreter
-   check (`re_node_ok`) explicitly allows it.** The final path-arguments loop assumes token index 1 is
+1. `node --check "${CLAUDE_PLUGIN_ROOT}"/scripts/<file>.mjs` was denied even though the interpreter
+   check (`re_node_ok`) explicitly allowed it. The final path-arguments loop assumes token index 1 is
    always the plugin script path when `mode == node` (true for `node <script> <args>`), but for the
    `--check <script>` form token index 1 is the literal flag `--check` and index 2 is the actual script
-   path — which then gets checked against `path_ok` in non-READ mode and denied by the
-   `"${CLAUDE_PLUGIN_ROOT}"/*` case. Net effect: this form is always blocked in practice, contradicting
-   what `re_node_ok` was written to allow.
-2. **`re_node_ok`'s `--check` branch does not restrict the script name to the three real export
-   scripts** the way the plain-execution branch does — it accepts any `"${CLAUDE_PLUGIN_ROOT}"/scripts/<name>.mjs`.
-   In current practice this is masked by issue (1) above (the path-loop denies it regardless of
-   filename), but if (1) is ever fixed without also tightening this regex, `--check` would newly accept
-   an arbitrary script name under `scripts/`.
+   path — which then got checked against `path_ok` in non-READ mode and denied by the
+   `"${CLAUDE_PLUGIN_ROOT}"/*` case.
+2. `re_node_ok`'s `--check` branch did not restrict the script name to the three real export scripts
+   the way the plain-execution branch does — it accepted any `"${CLAUDE_PLUGIN_ROOT}"/scripts/<name>.mjs`.
 
-Fixing either requires changing `guard-bash.sh` logic, which was explicitly out of scope for this build
-(transcribe the given edits verbatim; flag, don't redesign). `plugin/hooks/test-guard.sh` marks both
-with `KNOWN-DIVERGENT` comments at the relevant cases.
+Resolution: rather than adding token-offset-tracking logic to support a form nothing in the documented
+skill workflow actually uses, `--check` support was dropped from `re_node_ok` entirely. `node --check
+...` is now simply denied, same as any other unsupported `node` flag. `plugin/hooks/test-guard.sh`'s
+corresponding case was flipped from `allow` to `block` and the `KNOWN-DIVERGENT` comments were removed.
 
 ## Out of scope for this build
 
