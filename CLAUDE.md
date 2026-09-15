@@ -203,6 +203,10 @@ The old `deck v2.html` side-by-side copy still works (`Bash(cp artifacts/<a> art
 
 `design-systems/<name>/manifest.json` carries `default` (loaded when no name is given), `locked` (never overwritten; remix instead) and `version`. `verify-artifact` checks computed colors / fonts / radii against the loaded `.claude/design-tokens.json` and reports drift as P1/P2 — it never auto-fixes unless asked.
 
+### Repo remotes (working on this tool's own codebase)
+
+This checkout has two remotes: `origin` (`crywolfe/claude-code-design` — the fork; target for pushes and PRs) and `upstream` (`bluzir/claude-code-design` — read-only, the original repo). `gh`'s default-repo resolution is ambiguous with two remotes present and has silently picked `upstream` in practice. Always pass `--repo crywolfe/claude-code-design` explicitly on `gh pr create`, `gh issue create`, and similar — never rely on `gh`'s inferred default. `git push`/`git pull` without a remote argument are unaffected (they follow the current branch's configured upstream, which `git push -u origin <branch>` sets correctly).
+
 ## Asking good questions
 
 Asking good questions is critical.
