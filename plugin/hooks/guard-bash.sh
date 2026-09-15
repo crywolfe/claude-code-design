@@ -47,8 +47,23 @@ if [[ "$cmd" == *\$\'* ]]; then deny "ANSI-C quoting (\$'...') is not allowed"; 
 # Mask the project dir so absolute in-project paths (what `realpath` prints) read as PROJECT_DIR/...
 proj="${CLAUDE_PROJECT_DIR:-}"
 if [[ -n "$proj" && "$proj" == /* ]]; then cmd="${cmd//"$proj"/PROJECT_DIR}"; fi
-# \curl, \rm and friends bypass aliases, not this guard.
-cmd="${cmd//\\/}"
+# \curl, \rm and friends bypass shell aliases, not this guard: bash still runs the real
+# curl/rm binary, so a leading backslash is normalised away before command-word matching.
+# This must stay narrow. A blanket strip of every backslash (the previous form of this line)
+# is a critical bypass: bash treats an unquoted \" as a literal " that does NOT open a quoted
+# region, but erasing the backslash here made this guard's quote-tracking (below) believe a
+# quoted region HAD opened -- hiding real ; & | separators, and the commands after them,
+# inside what then looked like one harmless quoted segment (e.g. `echo \"; cp x
+# ~/Library/LaunchAgents/evil.plist ; echo \"` traced as a single allowed `echo` segment while
+# bash actually ran the unchecked `cp`). So: only a backslash immediately followed by a letter,
+# at the start of the command or right after whitespace/;/&/|/(/), is stripped (the \cmd alias
+# form). Any other backslash anywhere in the command is an outright deny.
+stripped="$cmd"
+while [[ "$stripped" =~ (^|[[:space:]\;\&\|\(\)])\\([A-Za-z][A-Za-z0-9_]*) ]]; do
+  stripped="${stripped/"${BASH_REMATCH[0]}"/${BASH_REMATCH[1]}${BASH_REMATCH[2]}}"
+done
+if [[ "$stripped" == *'\'* ]]; then deny "backslash escape sequence not allowed (only a leading \\cmd alias form, e.g. \\curl, is permitted)"; fi
+cmd="$stripped"
 
 # ---------------------------------------------------------------- 1. whole-command rules
 re_subst='\$\(|`|<\(|>\('

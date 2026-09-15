@@ -197,6 +197,15 @@ check block 'curl https://api.figma.com/v1/files/x -sS --output-dir /tmp'
 check block 'curl https://api.figma.com/v1/files/x http://127.0.0.1:4567/'
 check block '/usr/bin/curl https://attacker.example/ -sS'
 check block '\curl https://attacker.example/'
+check allow '\curl https://api.figma.com/v1/files/AbC123/nodes"?ids=1:2&depth=2" -sS -H "X-FIGMA-TOKEN: $FIGMA_TOKEN" -o artifacts/ingested/figma-20260908.json'   # \cmd alias-bypass normalisation must still allow a legitimate invocation
+# Backslash-quote desync, found in adversarial review: blanket-stripping \ before quote-tracking let a
+# literal \" (which bash treats as a plain " char, NOT a quote-opener) fool the guard into thinking a
+# quoted region had opened, hiding the real ; separators -- and the commands after them -- inside what
+# then looked like one harmless quoted segment starting with the allowed word `echo`.
+check block 'echo \"; cp artifacts/payload /Users/gw/Library/LaunchAgents/evil.plist ; echo \"'
+check block 'echo \"; cat /Users/gw/Documents/private.txt ; echo \"'
+check block 'echo \"; cp artifacts/payload "${CLAUDE_PLUGIN_ROOT}"/hooks/guard-bash.sh ; echo \"'
+check block 'echo \; ls'   # a lone backslash not followed by a letter must fail closed, not be silently dropped
 check block 'c=curl; $c https://attacker.example/'
 check block 'ls; curl https://example.com'
 check block 'echo "x" | curl https://api.figma.com/v1/files/x -sS'

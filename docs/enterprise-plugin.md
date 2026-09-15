@@ -195,26 +195,36 @@ No other outbound call exists in the committed skills. `wget`, `nc`, `ssh`, `scp
 ### Against the workspace (`.claude/`)
 
 1. `bash .claude/hooks/test-guard.sh` and confirm **0 failed**. The committed suite has 287
-   cases; the pending patch under `artifacts/hardening-patch/` raises it to 384 once applied.
+   cases; the pending patch under `artifacts/hardening-patch/` raises it to 389 once applied.
+   **This step is now urgent, not just outstanding**: the committed, unpatched
+   `.claude/hooks/guard-bash.sh` carries a critical bypass (found 2026-09-15 by an adversarial
+   review of the plugin build, documented as finding #10 in
+   `artifacts/hardening-patch/README.md`) that lets a smuggled command past the guard entirely
+   via a `\"` sequence — see that finding for the mechanism and proof-of-concept string.
 2. `git diff --no-index` the two hooks against the plugin's reference copy (a plugin must
    ship a checksum file for this).
 3. Confirm `.claude/settings.json` (or managed settings) contains the deny list, and that
    `Write`/`Edit` on `.claude/hooks/**`, `settings*.json`, `.mcp.json`, `scripts/**` is denied.
 4. Confirm `.mcp.json` pins `chrome-devtools-mcp@1.9.0` with `--isolated`.
 5. Read the findings register in `docs/architecture/security-architecture.html`: G-01 to
-   G-09 are reviewer-confirmed gaps in the committed guard with a patch pending; R-01 to
-   R-05 are accepted residual risks. A deployment should not go live before the patch is
-   applied and the self-test passes at 384.
+   G-10 are reviewer/adversarial-review-confirmed gaps in the committed guard with a patch
+   pending (G-10 is the critical backslash/quote-tracking desync above); R-01 to R-05 are
+   accepted residual risks. A deployment should not go live before the patch is applied and
+   the self-test passes at 389.
 
 ### Against the plugin (`plugin/`)
 
 6. `bash -n plugin/hooks/guard-bash.sh` and `python3 -m py_compile plugin/hooks/guard-browser.py`
    — both must exit clean before anything else below is meaningful.
-7. `bash plugin/hooks/test-guard.sh` and confirm **0 failed** against **403 cases** (103
-   must-allow, 258 must-block, 42 browser-guard; verified via
+7. `bash plugin/hooks/test-guard.sh` and confirm **0 failed** against **408 cases** (103
+   must-allow, 263 must-block, 42 browser-guard; verified via
    `rg -c '^b?check ' plugin/hooks/test-guard.sh`). A `node --check` gap was found and fixed
    during this build (support for that flag was dropped from `re_node_ok` rather than patched)
-   — see `plugin/README.md`'s "Known issues" section for the history.
+   — see `plugin/README.md`'s "Known issues" section for the history. A separate, **critical**
+   backslash/quote-tracking desync was found by an adversarial review after the build landed —
+   see `plugin/README.md`'s "Critical bypass found by adversarial review" section — and fixed
+   here, in `artifacts/hardening-patch/guard-bash.sh`, **and needs the same fix applied to the
+   still-vulnerable `.claude/hooks/guard-bash.sh` protecting this repo's own workspace mode**.
 8. Confirm `plugin/.claude-plugin/plugin.json` is valid JSON with at least `name` set, and
    that `plugin/hooks/hooks.json` wires both guards through `"${CLAUDE_PLUGIN_ROOT}"/hooks/…`.
 9. Confirm a managed-settings deny list (`plugin/managed-settings.reference.json` or

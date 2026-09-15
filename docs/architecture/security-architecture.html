@@ -379,7 +379,7 @@
 <figure>
 <svg viewBox="0 0 1040 520" role="img" aria-labelledby="stack-title stack-desc" xmlns="http://www.w3.org/2000/svg">
   <title id="stack-title">Security control stack with residual risk per layer</title>
-  <desc id="stack-desc">Six layers from top to bottom: enterprise controls (proposed, not in the repo), Claude Code permission rules, PreToolUse hooks, process isolation, per-skill tool scoping, and CLAUDE.md policy enforced by the model. Each layer lists its controls and what passes through it to the next layer. The hooks layer is highlighted; its residual is the set of reviewer findings G-01 to G-09 with a patch pending.</desc>
+  <desc id="stack-desc">Six layers from top to bottom: enterprise controls (proposed, not in the repo), Claude Code permission rules, PreToolUse hooks, process isolation, per-skill tool scoping, and CLAUDE.md policy enforced by the model. Each layer lists its controls and what passes through it to the next layer. The hooks layer is highlighted; its residual is the set of reviewer findings G-01 to G-10 with a patch pending.</desc>
   <rect width="100%" height="100%" fill="#f5f5f5"/>
 
   <g font-family="Geist Mono, monospace" font-size="8" font-weight="500" letter-spacing="1" fill="#4f5d75">
@@ -420,7 +420,7 @@
     <text x="272" y="198">guard-bash.sh: per-segment allowlist for curl node python3 open rm zip gh git</text>
     <text x="272" y="212">no shells, interpreters, wrappers, $( ), backticks, .., redirects to files</text>
     <text x="272" y="226">guard-browser.py: file:// in project or 127.0.0.1 · no initScript · text filter</text>
-    <text x="716" y="198">G-01…G-09: quoted names, ./ prefixes, $'…',</text>
+    <text x="716" y="198">G-01…G-10: quoted names, ./ prefixes, $'…',</text>
     <text x="716" y="212">reads outside the project, git tree rewrites</text>
     <text x="716" y="226">→ patch pending · hook files protected by layer 2</text>
   </g>
@@ -537,6 +537,7 @@
     <tr><td class="id">G-07</td><td>False positives: <code>2&gt;&amp;1</code> inside a pipeline and <code>which node</code> are blocked, so <code>/doctor</code> and both export preflights fail.</td><td class="sev"><span class="dot"></span>Important</td><td><span class="tag pend">skills now use <code>node --version</code>; <code>2&gt;&amp;1</code> patch pending</span></td></tr>
     <tr><td class="id">G-08</td><td>The <code>Bash(rm -rf /*)</code> deny also matches the documented <code>rm -rf /tmp/cd-ingest-…</code> cleanup, per the reviewer.</td><td class="sev"><span class="dot"></span>Important</td><td><span class="tag pend">manual settings edit</span></td></tr>
     <tr><td class="id">G-09</td><td><code>[^\n]</code> in two regexes meant "not backslash, not n" rather than "not newline".</td><td class="sev"><span class="dot"></span>Minor</td><td><span class="tag pend">patch pending</span></td></tr>
+    <tr><td class="id">G-10</td><td>Found 2026-09-15 by an adversarial review of a plugin build's copy of this guard, confirmed present here too: blanket-stripping every backslash before quote-tracking desynced the guard's quotes from bash's — bash treats an unquoted <code>\"</code> as a literal <code>"</code>, not a quote-opener, but the guard, having erased the backslash, saw a bare <code>"</code> and opened a quoted region anyway, hiding real <code>;</code>/<code>&amp;</code>/<code>|</code> separators (and the commands after them) inside what then read as one harmless quoted segment. Full path-confinement bypass: <code>echo \"; cp x ~/Library/LaunchAgents/evil.plist ; echo \"</code> traces as a single allowed <code>echo</code> segment while bash runs the unchecked <code>cp</code>, including onto the guard's own files.</td><td class="sev"><span class="dot crit"></span>Critical</td><td><span class="tag pend">patch pending in <code>artifacts/hardening-patch/</code>; not yet applied to the committed <code>.claude/hooks/guard-bash.sh</code></span></td></tr>
     <tr><td class="id">S-01</td><td>The MCP server is fetched from npm at each start with a pinned version but no integrity hash.</td><td class="sev"><span class="dot"></span>Supply chain</td><td><span class="tag">open · vendor for enterprise</span></td></tr>
     <tr><td class="id">R-01</td><td>The <code>evaluate_script</code> filter stays best-effort after the patch. The real boundary is the URL scope: only pages this repo generated are ever loaded.</td><td class="sev"><span class="dot res"></span>Residual</td><td><span class="tag">accepted</span></td></tr>
     <tr><td class="id">R-02</td><td>The browser hook matches three tools. <code>click</code>, <code>fill_form</code> and <code>upload_file</code> are ungated, and no skill grants them.</td><td class="sev"><span class="dot res"></span>Residual</td><td><span class="tag">accepted</span></td></tr>

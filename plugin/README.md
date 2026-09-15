@@ -74,10 +74,46 @@ python3 -m py_compile plugin/hooks/guard-browser.py
 bash plugin/hooks/test-guard.sh
 ```
 
-`plugin/hooks/test-guard.sh` currently defines **403 cases** (103 must-allow bash cases, 258
+`plugin/hooks/test-guard.sh` currently defines **408 cases** (103 must-allow bash cases, 263
 must-block bash cases, 42 browser-guard cases — verified via `rg -c '^b?check ' plugin/hooks/test-guard.sh`
-against the file as committed). It should print `403 cases, 0 failed` — confirmed against this build's
+against the file as committed). It should print `408 cases, 0 failed` — confirmed against this build's
 final `plugin/scripts/` and `plugin/.mcp.json` layout.
+
+## Critical bypass found by adversarial review, fixed (2026-09-15)
+
+An Opus-tier adversarial review of `guard-bash.sh` after this build landed found a critical bug,
+**not introduced by this build** — it was inherited unchanged from the already-hardened
+`artifacts/hardening-patch/guard-bash.sh` base this plugin's guard was built from, and is also
+present, unfixed, in the still-unapplied `.claude/hooks/guard-bash.sh` that protects this repo's
+own workspace mode today.
+
+`cmd="${cmd//\\/}"` blanket-stripped every backslash from the command string before the
+quote-tracking segment splitter ran. Bash treats an unquoted `\"` as a literal `"` character that
+does **not** open a quoted region — but erasing the backslash made the guard's own quote-tracking
+believe a quoted region *had* opened. Every real `;`/`&`/`|` separator after that point, and every
+command they introduced, was then hidden inside what the guard mis-saw as one harmless quoted
+segment. Concretely:
+
+```
+echo \"; cp artifacts/payload ~/Library/LaunchAgents/evil.plist ; echo \"
+```
+
+traced, in the guard, as a single allowed `echo`-led segment (mode selection only inspects the
+parsed first word, which is `echo`, so `path_ok` never ran on the `cp` destination) — while bash
+actually executed all three real commands, including the unchecked `cp` to an arbitrary path
+outside the project. The same mechanism defeats every `first`-keyed protection in the file,
+including the checks meant to stop a `cp`/`mv` from overwriting the guard or its own hooks.
+
+**Fix:** the backslash-strip is now narrow — only a backslash immediately followed by a letter, at
+the start of the command or right after whitespace/`;`/`&`/`|`/`(`/`)`, is stripped (the documented
+`\curl`/`\rm` shell-alias-bypass normalisation this line originally existed for). Any other
+backslash anywhere in the command — in particular one right before a quote character — is now an
+outright deny instead of being silently dropped. Five new self-test cases cover it (the exact
+proof-of-concept above, a read-exfiltration variant, an attempt to overwrite the guard itself, and
+a lone-backslash fail-closed check, plus one `allow` case confirming the narrow `\curl` form still
+works). The same fix was applied to `artifacts/hardening-patch/guard-bash.sh` — **applying that
+patch to `.claude/hooks/guard-bash.sh` is now urgent, not just outstanding**, since the live guard
+has the identical bug today.
 
 ## Known issues (flagged, not silently patched, then fixed)
 
@@ -121,7 +157,7 @@ plugin/
 │   ├── hooks.json                     ← PreToolUse wiring, "${CLAUDE_PLUGIN_ROOT}" paths
 │   ├── guard-bash.sh                  ← Bash tool guard
 │   ├── guard-browser.py               ← Chrome DevTools MCP guard (byte-identical to the hardening-patch source)
-│   └── test-guard.sh                  ← self-test, 403 cases
+│   └── test-guard.sh                  ← self-test, 408 cases
 ├── skills/                            ← 28 skills, copied from .claude/skills and rewritten for "${CLAUDE_PLUGIN_ROOT}"
 ├── commands/                          ← 4 command files
 ├── starters/                          ← 6 starter files (deck_stage.js, animations.jsx, etc.)
