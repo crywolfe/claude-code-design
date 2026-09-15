@@ -20,32 +20,25 @@ projects*.
 | Bash/browser guard | `.claude/hooks/guard-bash.sh`, `.claude/hooks/guard-browser.py`, wired via `.claude/settings.json` | `plugin/hooks/guard-bash.sh`, `plugin/hooks/guard-browser.py`, wired via `plugin/hooks/hooks.json` |
 | Project-level deny list | `.claude/settings.json`'s `permissions.deny` | **Not available.** A plugin's own `settings.json` only honors the `agent` and `subagentStatusLine` keys — it cannot carry `permissions.deny`. See "Managed settings" below. |
 
-## Required setup step before this plugin will actually run
+## Setup-step history (resolved)
 
-This checkout's sandbox permission engine blocks any tool (Bash `cp`/`mv`/`mkdir`, and the `Write`
-tool) from creating or renaming a path that contains a `scripts` directory segment, or a file named
+`plugin/scripts/` and `plugin/.mcp.json` now exist at their final paths and are what everything in
+this plugin (`hooks.json`, every skill's `"${CLAUDE_PLUGIN_ROOT}"/scripts/...` reference,
+`guard-bash.sh`'s allowlist) assumed all along. They could not be created directly by any Claude Code
+tool during this build: the checkout's permission engine blocks Bash `cp`/`mv`/`mkdir` and the `Write`
+tool from creating or renaming any path containing a `scripts` directory segment, or a file named
 `.mcp.json`, anywhere in the tree — an unanchored, gitignore-style match against this same repo's own
 `.claude/settings.json` deny rules (`Write(scripts/**)`, `Write(.mcp.json)`, and their `Edit`
-equivalents), which this build was explicitly forbidden from touching. As a result, `plugin/scripts/`
-and `plugin/.mcp.json` could not be created directly and instead exist, byte-identical, at:
-
-- `plugin/scripts_stage/` (rename to `plugin/scripts/`)
-- `plugin/mcp_stage.json` (rename to `plugin/.mcp.json`)
-
-Before installing or testing this plugin, run, from an unrestricted shell:
+equivalents), which this build was explicitly forbidden from touching. The content was staged
+byte-identical at `plugin/scripts_stage/` and `plugin/mcp_stage.json`, and a human then ran, from an
+unrestricted shell outside Claude Code's tool permissions:
 
 ```
 mv plugin/scripts_stage plugin/scripts
 mv plugin/mcp_stage.json plugin/.mcp.json
 ```
 
-Everything in this plugin (`hooks.json`, every skill's `"${CLAUDE_PLUGIN_ROOT}"/scripts/...`
-reference, `guard-bash.sh`'s allowlist) already assumes the final `plugin/scripts/` path — only the
-two `mv` commands above are needed to make the tree match.
-
-There is also one leftover empty scratch directory, `plugin/zztest/`, created while diagnosing the
-above (the guard's `rm` allowlist only permits removing `/tmp/cd-ingest-*`, so it could not be deleted
-from within this session either) — delete it manually; it is untracked and was not staged.
+which is reflected in the current tree.
 
 ## Install
 
@@ -83,7 +76,8 @@ bash plugin/hooks/test-guard.sh
 
 `plugin/hooks/test-guard.sh` currently defines **403 cases** (103 must-allow bash cases, 258
 must-block bash cases, 42 browser-guard cases — verified via `rg -c '^b?check ' plugin/hooks/test-guard.sh`
-against the file as committed). It should print `403 cases, 0 failed`.
+against the file as committed). It should print `403 cases, 0 failed` — confirmed against this build's
+final `plugin/scripts/` and `plugin/.mcp.json` layout.
 
 ## Known issues (flagged, not silently patched, then fixed)
 

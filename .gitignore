@@ -43,6 +43,9 @@ artifacts/ingested/
 # MCP server state (Serena keeps a per-machine project index here)
 .serena/
 
+# Python bytecode cache (e.g. from `python3 -m py_compile` on guard-browser.py)
+__pycache__/
+
 # OS / editor
 .DS_Store
 .AppleDouble

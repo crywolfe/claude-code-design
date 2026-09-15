@@ -224,9 +224,8 @@ No other outbound call exists in the committed skills. `wget`, `nc`, `ssh`, `scp
    matters more than it looks", which applies to the plugin exactly as it does to the
    workspace).
 10. Confirm `plugin/scripts/` and `plugin/.mcp.json` actually exist in the installed plugin
-    (not `plugin/scripts_stage/` / `plugin/mcp_stage.json` — see `plugin/README.md`'s
-    "Required setup step" section for why those staging names exist in this build and what
-    a two-line `mv` fixes).
+    (they do, as of this build — the staging-and-rename history is in `plugin/README.md`'s
+    "Setup-step history" section).
 
 ---
 
@@ -258,8 +257,8 @@ No other outbound call exists in the committed skills. `wget`, `nc`, `ssh`, `scp
    `plugin/skills/sync-design-system/SKILL.md` already had an equivalent `DesignSync`
    availability check in its existing Phase 0 and needed no change.
 5. **NOT DONE.** Vendoring or mirroring `chrome-devtools-mcp@1.9.0` is unchanged from the
-   workspace's own posture; the plugin's `.mcp.json` (once moved into place — see
-   `plugin/README.md`) pins the same version the workspace does, nothing more.
+   workspace's own posture; the plugin's `.mcp.json` pins the same version the workspace does,
+   nothing more.
 6. **NOT DONE.** No Foundry deployment or Bedrock inference profile is available in this
    environment to test against.
 7. **NOT DONE.** No marketplace or cloud credentials are available in this environment.
