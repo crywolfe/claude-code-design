@@ -1,7 +1,25 @@
 # Enterprise plugin roadmap
 
-Status: **proposal, not implemented.** Today this repo is a workspace (a project folder with
-`.claude/skills`, `.claude/commands`, `.claude/settings.json`, `.claude/hooks` and `.mcp.json`).
+Status: **a first plugin build now exists at `plugin/`, additive to the workspace.** Today this
+repo is still, primarily, a workspace (a project folder with `.claude/skills`, `.claude/commands`,
+`.claude/settings.json`, `.claude/hooks` and `.mcp.json`), and that workspace is untouched by the
+plugin build. The decision that was made: `plugin/` is a **new, separate, self-contained package**
+sitting alongside the workspace — not an in-place conversion of `.claude/` into a plugin. The two
+can coexist in this repo indefinitely; installing the plugin elsewhere has no effect on this repo's
+own workspace mode, and nothing under `.claude/`, `starters/`, `scripts/` or `.mcp.json` was modified
+to produce it. See `plugin/README.md` for what was built, its known issues, and the exact
+verification commands. This document continues to describe the fuller roadmap — what has and has
+not been done toward it is noted inline below and in §6.
+
+Important provenance note: `plugin/hooks/guard-bash.sh` and `plugin/hooks/test-guard.sh` were built
+from the **already-hardened** `artifacts/hardening-patch/` versions of the guards (the ones that fix
+the reviewer-confirmed gaps tracked in `docs/architecture/security-architecture.html`), not from the
+older, unpatched versions still committed at `.claude/hooks/`. Building the plugin did **not** apply
+that hardening patch to the workspace's own `.claude/hooks/` — that remains a separate, still
+outstanding manual step for a human to run, exactly as described in
+`artifacts/hardening-patch/README.md`. Until that step happens, the workspace's own guards remain the
+older, less-hardened versions; only the plugin's copies are on the hardened baseline.
+
 This document describes what it would take to ship the same capability as a Claude Code
 **plugin** for an enterprise client that
 
@@ -27,12 +45,12 @@ Documentation URLs are at the end.
 | Concern | Workspace (today) | Plugin (proposed) |
 |---|---|---|
 | Distribution | Clone or "Use this template" | `/plugin install` from a marketplace, `--plugin-dir <path>` for local testing, `--plugin-url` for a remote zip *(docs)* |
-| Manifest | none | `.claude-plugin/plugin.json` at the plugin root; required fields `name`, `description`; optional `version`, `author`, `homepage`, `repository`, `license` *(docs)* |
+| Manifest | none | `.claude-plugin/plugin.json` at the plugin root; **`name` is the only required field** — "If you include a manifest, `name` is the only required field." `description`, `version`, `author`, `homepage`, `repository`, `license` are all optional metadata fields; `author` is an **object** (`{name, email?, url?}`), not a string *(docs, confirmed via a direct fetch of the plugins-reference page, 2026-09-15; corrects an earlier draft of this table which listed `description` as required too)* |
 | Skills, commands | `.claude/skills/*`, `.claude/commands/*` | `skills/`, `commands/` at the plugin root, **outside** `.claude-plugin/` *(docs)* |
 | Hooks | registered in `.claude/settings.json`, scripts under `.claude/hooks/`, referenced as `"$CLAUDE_PROJECT_DIR"/.claude/hooks/…` | `hooks/hooks.json` at the plugin root *(docs)*. A hook references its own script through `"${CLAUDE_PLUGIN_ROOT}"/hooks/guard-bash.sh`, the absolute path of the plugin's installation directory, quoted in shell-form hooks *(docs)* |
 | MCP server | `.mcp.json` in the project | `.mcp.json` at the plugin root *(docs)* |
 | Permission deny list | `permissions.deny` in `.claude/settings.json` | **Plugins cannot ship permission rules** *(docs)*. The deny list must be delivered another way, see §3 |
-| Default settings | n/a | a plugin may ship a `settings.json`, but only the `agent` and `subagentStatusLine` keys are honoured, so it cannot carry `permissions` *(docs)* |
+| Default settings | n/a | a plugin may ship a `settings.json`, but only the `agent` and `subagentStatusLine` keys are honoured, so it cannot carry `permissions` *(docs, re-confirmed via a direct fetch of the plugins-reference page, 2026-09-15: "Only the `agent` and `subagentStatusLine` keys are supported")* |
 | CLAUDE.md policy | project `CLAUDE.md` | not a plugin component; ship it as a skill's instructions or ask the client to add it to their project or managed `CLAUDE.md` |
 | Starters, export scripts | `starters/`, `scripts/*.mjs` | plugin root; the guard's `node` allowlist must be rewritten to `${CLAUDE_PLUGIN_ROOT}/scripts/…` and the self-test extended for it |
 
@@ -107,11 +125,20 @@ agreement, not Anthropic's *(docs)*.
 
 Precedence is managed → user (`~/.claude/settings.json`) → project (`.claude/settings.json`)
 → `--settings` flag, and managed settings can force hooks, restrict MCP servers and set
-`permissions` *(docs)*. Deny rules, and hooks that return a deny decision, are reported to
-block the tool in every permission mode, including `bypassPermissions` and
-`--dangerously-skip-permissions` *(verify: this comes from search snippets only; confirm it
-on the permission-modes page, section "Skip all checks with bypassPermissions mode", before
-an auditor relies on it)*. Managed settings can also disable that mode outright with
+`permissions` *(docs)*. Deny rules, and hooks that return a deny decision, block the tool in
+every permission mode, including `bypassPermissions` and `--dangerously-skip-permissions`
+*(confirmed via a documentation lookup on 2026-09-15: "A hook that returns
+`permissionDecision: "deny"` blocks the tool even in bypassPermissions mode or with
+`--dangerously-skip-permissions`, letting you enforce policy that users can't bypass by
+changing their permission mode," and separately, "Deny rules ... and hooks are evaluated
+before the mode check and can still block a tool." Both direct page fetches for this session
+returned oversized documents that this session's tooling could not fully inline, so this was
+confirmed via targeted documentation search rather than a full primary-source read of the
+page end-to-end; the quoted sentences match Anthropic's documented phrasing closely enough,
+and were corroborated independently in two separate searches, that this note now treats the
+claim as confirmed rather than "verify" — but a human with full page access should still
+spot-check it against the live permission-modes/hooks-guide pages before an audit leans on
+it hard)*. Managed settings can also disable that mode outright with
 `permissions.disableBypassPermissionsMode`, listed in the settings reference as "Prevent
 anyone from entering bypassPermissions mode" *(docs; the reference does not state the value
 type, so confirm the accepted value in the client's Claude Code version)*.
@@ -126,10 +153,18 @@ Proposed split:
 | `CLAUDE.md` rules (ask before ingest, untrusted content, browser scope) | client's managed or project `CLAUDE.md`, copied from the plugin |
 | Self-test (`test-guard.sh`) | plugin; run by `/doctor` and in the client's CI |
 
-Open item: the workspace's deny list currently includes `Read(~/.claude/**)`, which also
-blocks reading plugin caches under `~/.claude/plugins/`. A plugin version of the deny list
-must carve out the plugin's own root or the plugin cannot read its own skills. *(verify
-against the client's plugin cache location.)*
+Resolved: the workspace's own deny list includes a blanket `Read(~/.claude/**)`, which would
+also block reading plugin caches under `~/.claude/plugins/` — confirmed via a direct fetch of
+the plugins-reference page (2026-09-15): Claude Code caches marketplace plugins at
+`~/.claude/plugins/cache` (one directory per installed version, grouped by marketplace and
+plugin name) and keeps a persistent per-plugin data directory at `~/.claude/plugins/data/{id}/`.
+`plugin/managed-settings.reference.json` in this repo carves this out: instead of a blanket
+`Read(~/.claude/**)`, it denies only the two specific files that matter
+(`Read(~/.claude/settings.json)`, `Read(~/.claude/settings.local.json)`) plus `~/.claude.json`,
+and leaves `~/.claude/plugins/**` readable so an installed plugin can read its own cached
+files. It still denies `Write`/`Edit` under `~/.claude/**` (including the plugin cache) and adds
+an explicit `Edit(~/.claude/plugins/**)` deny, since nothing should be rewriting an installed
+plugin's files in place.
 
 ---
 
@@ -157,6 +192,8 @@ No other outbound call exists in the committed skills. `wget`, `nc`, `ssh`, `scp
 
 ## 5. What an auditor should run
 
+### Against the workspace (`.claude/`)
+
 1. `bash .claude/hooks/test-guard.sh` and confirm **0 failed**. The committed suite has 287
    cases; the pending patch under `artifacts/hardening-patch/` raises it to 384 once applied.
 2. `git diff --no-index` the two hooks against the plugin's reference copy (a plugin must
@@ -169,26 +206,65 @@ No other outbound call exists in the committed skills. `wget`, `nc`, `ssh`, `scp
    R-05 are accepted residual risks. A deployment should not go live before the patch is
    applied and the self-test passes at 384.
 
+### Against the plugin (`plugin/`)
+
+6. `bash -n plugin/hooks/guard-bash.sh` and `python3 -m py_compile plugin/hooks/guard-browser.py`
+   — both must exit clean before anything else below is meaningful.
+7. `bash plugin/hooks/test-guard.sh` and confirm **0 failed** against **403 cases** (103
+   must-allow, 258 must-block, 42 browser-guard; verified via
+   `rg -c '^b?check ' plugin/hooks/test-guard.sh`). As shipped this will show **1 known
+   failure**, not 0 — see `plugin/README.md`'s "Known issues" section for the exact case and
+   why it was left flagged rather than silently patched.
+8. Confirm `plugin/.claude-plugin/plugin.json` is valid JSON with at least `name` set, and
+   that `plugin/hooks/hooks.json` wires both guards through `"${CLAUDE_PLUGIN_ROOT}"/hooks/…`.
+9. Confirm a managed-settings deny list (`plugin/managed-settings.reference.json` or
+   equivalent) is actually deployed at the OS-specific managed-settings path on any machine
+   this plugin is installed on — without it, the plugin's PreToolUse hooks are the *only*
+   enforced control, with no deny-list layer underneath them (see §3, "Why the deny list
+   matters more than it looks", which applies to the plugin exactly as it does to the
+   workspace).
+10. Confirm `plugin/scripts/` and `plugin/.mcp.json` actually exist in the installed plugin
+    (not `plugin/scripts_stage/` / `plugin/mcp_stage.json` — see `plugin/README.md`'s
+    "Required setup step" section for why those staging names exist in this build and what
+    a two-line `mv` fixes).
+
 ---
 
 ## 6. Work plan
 
-1. Apply and test the hardening patch on the workspace (user's shell; see
-   `artifacts/hardening-patch/README.md`). Nothing below should start before this.
-2. Restructure into plugin layout: move `.claude/skills` → `skills/`, `.claude/commands` →
-   `commands/`, hooks → `hooks/` with `hooks/hooks.json`, add `.claude-plugin/plugin.json`.
-   Reference hook scripts as `"${CLAUDE_PLUGIN_ROOT}"/hooks/…` and update `guard-bash.sh`'s
-   `node` and `python3` allowlists to the new paths, with self-test cases for each.
-3. Write `managed-settings.reference.json` (the deny list) and teach `/doctor` to diff the
-   effective settings against it and refuse to proceed on mismatch.
-4. Make `publish` and `sync-design-system` detect an unavailable Artifact/DesignSync tool and
-   stop with a clear message instead of failing mid-flow.
-5. Vendor or mirror `chrome-devtools-mcp@1.9.0` for clients without npm registry egress.
-6. Test on one Foundry deployment and one Bedrock inference profile; record the exact
-   env-var set used in this document.
-7. Publish to a private marketplace. Pin the release in the marketplace entry (`version`, or
-   `ref` plus `sha` for a git source; `sha` is the effective pin) and install it with managed
-   scope, which administrators set through managed settings and users cannot change *(docs)*.
+1. **NOT DONE.** Apply and test the hardening patch on the workspace itself (user's shell; see
+   `artifacts/hardening-patch/README.md`). This step is about the *workspace's* own
+   `.claude/hooks/`, which the plugin build below did not touch and does not substitute for.
+2. **DONE, additively.** Restructured into a plugin layout at `plugin/` — `skills/`,
+   `commands/`, `hooks/` with `hooks/hooks.json`, `.claude-plugin/plugin.json` — built as a
+   *new, separate* package (not an in-place move of `.claude/skills` etc.), so the workspace
+   at `.claude/` is untouched and still works exactly as before. Hook scripts are referenced
+   as `"${CLAUDE_PLUGIN_ROOT}"/hooks/…`; `guard-bash.sh`'s `node` allowlist was rewritten to
+   `"${CLAUDE_PLUGIN_ROOT}"/scripts/…` (its `python3` rule needed no change — python3 is only
+   used for the local preview server, which never touches `scripts/` or `starters/`), with
+   self-test cases added in `plugin/hooks/test-guard.sh`. The plugin's `guard-bash.sh` and
+   `test-guard.sh` were built from the hardening-patch versions, not from step 1's
+   (still-unapplied) target — see the provenance note near the top of this document.
+3. **Partially done, one design change from the original plan.** `plugin/managed-settings.reference.json`
+   is written. `/doctor` (`plugin/skills/doctor/SKILL.md`, new Phase 0) checks for a
+   managed-settings file and **warns** when it is missing — it does **not** "refuse to
+   proceed on mismatch" as this plan originally said. That was a deliberate change made while
+   implementing Phase 0: `/doctor` is a diagnostic skill with no enforcement mechanism of its
+   own (it cannot stop other skills from running), so a hard refuse-to-proceed there would be
+   theater, not a control — the actual enforcement is, and remains, the PreToolUse hooks plus
+   whatever managed settings an admin deploys underneath them.
+4. **Done.** `plugin/skills/publish/SKILL.md` gained a Phase 0 that checks for the `Artifact`
+   tool and stops with a message pointing to `/export-standalone` if it is unavailable.
+   `plugin/skills/sync-design-system/SKILL.md` already had an equivalent `DesignSync`
+   availability check in its existing Phase 0 and needed no change.
+5. **NOT DONE.** Vendoring or mirroring `chrome-devtools-mcp@1.9.0` is unchanged from the
+   workspace's own posture; the plugin's `.mcp.json` (once moved into place — see
+   `plugin/README.md`) pins the same version the workspace does, nothing more.
+6. **NOT DONE.** No Foundry deployment or Bedrock inference profile is available in this
+   environment to test against.
+7. **NOT DONE.** No marketplace or cloud credentials are available in this environment.
+   `plugin/marketplace-entry.example.json` is a template only, not a deployed listing, and
+   nothing was actually published anywhere.
 
 ---
 
