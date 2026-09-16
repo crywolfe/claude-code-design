@@ -247,9 +247,11 @@ No other outbound call exists in the committed skills. `wget`, `nc`, `ssh`, `scp
 
 ## 6. Work plan
 
-1. **NOT DONE.** Apply and test the hardening patch on the workspace itself (user's shell; see
-   `artifacts/hardening-patch/README.md`). This step is about the *workspace's* own
-   `.claude/hooks/`, which the plugin build below did not touch and does not substitute for.
+1. **DONE (2026-09-15, commit `dd641c0`).** Applied and tested the hardening patch on the
+   workspace itself, from the user's own shell (see `artifacts/hardening-patch/README.md`).
+   `.claude/hooks/test-guard.sh` now passes 389 cases, 0 failed. This step was about the
+   *workspace's* own `.claude/hooks/`, which the plugin build below did not touch and does
+   not substitute for.
 2. **DONE, additively.** Restructured into a plugin layout at `plugin/` — `skills/`,
    `commands/`, `hooks/` with `hooks/hooks.json`, `.claude-plugin/plugin.json` — built as a
    *new, separate* package (not an in-place move of `.claude/skills` etc.), so the workspace
