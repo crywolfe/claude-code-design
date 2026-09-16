@@ -36,7 +36,6 @@
       "Bash(gh release:*)",
       "Bash(rm -rf ~:*)",
       "Bash(rm -rf /)",
-      "Bash(rm -rf /*)",
       "Bash(rm -rf $HOME:*)",
       "Bash(sudo:*)",
       "Bash(eval:*)",

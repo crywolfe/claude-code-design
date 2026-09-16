@@ -11,6 +11,15 @@ Enforces the CLAUDE.md "Browser scope" rule mechanically:
   exit 0 -> allow
   exit 2 -> block, message on stderr is shown to Claude
 
+Trust boundary: the URL check is sound (real path under the project, or the
+loopback server). The evaluate_script check is best-effort source-text
+matching. It stops the obvious forms (fetch(, new WebSocket(, location.href =,
+window["fe"+"tch"], eval(atob(...)), .click()), but JavaScript has unbounded
+ways to spell a call, so a determined prompt injection can get past it.
+Treat evaluate_script as unfiltered when deciding what a page may contain:
+the pages it runs on must themselves be trusted, i.e. artifacts this repo
+generated, not arbitrary captured sites.
+
 Fails closed: any parse error or missing CLAUDE_PROJECT_DIR blocks the call.
 """
 import json
@@ -26,13 +35,20 @@ NET_RE = re.compile(
     r"\bimport\s*\(|"
     r"\bwindow\s*\.\s*open\s*\(|"
     r"\blocation\s*\.\s*(href|assign|replace|host|hostname|protocol|pathname|search)\b|"
+    r"\blocation\s*=(?!=)|"
     r"\bdocument\s*\.\s*(location|write|writeln|cookie)\b|"
     r"\.(src|srcset|href|action|srcdoc)\s*=|"
     r"\bcreateElement\s*\(\s*['\"](script|iframe|img|link|object|embed|form|video|audio|source)['\"]|"
     r"\b(insertAdjacentHTML|outerHTML|innerHTML)\s*[=(]|"
     r"\bnavigator\s*\.\s*(clipboard|credentials|geolocation|mediaDevices|share)\b|"
     r"\b(localStorage|sessionStorage|indexedDB|caches)\b|"
-    r"\bsubmit\s*\(",
+    r"\bsubmit\s*\(|"
+    # indirection: computed property access on the globals, eval-likes, string timers
+    r"\b(window|self|globalThis|top|parent|frames|navigator|document|location)\s*\[|"
+    r"(?-i:\b(eval|Function|atob|execScript|fromCharCode)\s*\()|"
+    r"\b(setTimeout|setInterval)\s*\(\s*['\"`]|"
+    r"\bReflect\s*\.|"
+    r"\.click\s*\(",
     re.IGNORECASE,
 )
 
