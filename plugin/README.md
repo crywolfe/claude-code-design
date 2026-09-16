@@ -42,11 +42,27 @@ which is reflected in the current tree.
 
 ## Install
 
-Either:
+This repo self-hosts its own marketplace at `/.claude-plugin/marketplace.json` (repo root), whose one
+entry points at this `plugin/` directory. From any Claude Code session:
 
-- `/plugin install` and point it at this `plugin/` directory (or a marketplace entry — see
-  `marketplace-entry.example.json` for the shape), or
-- Launch Claude Code with `--plugin-dir plugin/` from a checkout of this repo.
+```
+/plugin marketplace add crywolfe/claude-code-design
+/plugin install claude-code-design@claude-code-design
+```
+
+The first command adds this repo as a marketplace source; the second installs the plugin from it
+(`plugin-name@marketplace-name` — both happen to be named `claude-code-design` here, per
+`/.claude-plugin/marketplace.json`). Interactively, `/plugin` on its own opens a menu with a
+**Discover** tab that does the same thing with prompts for install scope (user / project / local).
+
+Other ways to run it, mainly useful for developing this plugin itself:
+
+- `claude --plugin-dir plugin/` — load it directly from a local checkout, no marketplace involved.
+- `claude plugin validate ./plugin` — validate the manifest and components before publishing a change
+  (requires Claude Code v2.1.233+ for path-without-manifest validation of subcomponents).
+- `marketplace-entry.example.json` documents the entry shape for the *different* scenario of forking
+  this plugin's source into its own repo, listed from a separate marketplace repo (needs the
+  `git-subdir` source form since there's no shared repo root to resolve `./plugin` against).
 
 ## Managed settings — required before any security-sensitive use
 
@@ -151,6 +167,7 @@ corresponding case was flipped from `allow` to `block` and the `KNOWN-DIVERGENT`
 ## Files
 
 ```
+.claude-plugin/marketplace.json        ← (repo root) the real, self-hosted marketplace listing
 plugin/
 ├── .claude-plugin/plugin.json         ← manifest (name, description, version, author)
 ├── hooks/

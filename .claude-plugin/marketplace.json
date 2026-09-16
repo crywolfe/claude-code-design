@@ -1,0 +1,21 @@
+{
+  "name": "claude-code-design",
+  "description": "Marketplace for the claude-code-design plugin — design-grade HTML artifacts (decks, prototypes, wireframes, animated video, design systems) via skills, commands and a hardened Bash/browser guard.",
+  "owner": {
+    "name": "crywolfe"
+  },
+  "plugins": [
+    {
+      "name": "claude-code-design",
+      "source": "./plugin",
+      "description": "Design-grade HTML artifacts (decks, prototypes, wireframes, animated video, design systems) built through skills, commands and a hardened Bash/browser guard -- packaged as a self-contained Claude Code plugin.",
+      "version": "0.1.0",
+      "author": {
+        "name": "claude-code-design contributors"
+      },
+      "homepage": "https://github.com/crywolfe/claude-code-design",
+      "repository": "https://github.com/crywolfe/claude-code-design",
+      "license": "MIT"
+    }
+  ]
+}

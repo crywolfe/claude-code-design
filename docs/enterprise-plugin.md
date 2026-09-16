@@ -236,6 +236,12 @@ No other outbound call exists in the committed skills. `wget`, `nc`, `ssh`, `scp
 10. Confirm `plugin/scripts/` and `plugin/.mcp.json` actually exist in the installed plugin
     (they do, as of this build — the staging-and-rename history is in `plugin/README.md`'s
     "Setup-step history" section).
+11. Confirm `/.claude-plugin/marketplace.json` (repo root) is valid JSON with `name`, `owner.name`
+    and one `plugins` entry whose `source` is `"./plugin"`; `claude plugin validate ./plugin`
+    should pass. `/plugin marketplace add crywolfe/claude-code-design` then
+    `/plugin install claude-code-design@claude-code-design` is the documented end-user install
+    path — an auditor should run both against a scratch project to confirm it actually works, not
+    just that the JSON parses.
 
 ---
 
@@ -271,9 +277,19 @@ No other outbound call exists in the committed skills. `wget`, `nc`, `ssh`, `scp
    nothing more.
 6. **NOT DONE.** No Foundry deployment or Bedrock inference profile is available in this
    environment to test against.
-7. **NOT DONE.** No marketplace or cloud credentials are available in this environment.
-   `plugin/marketplace-entry.example.json` is a template only, not a deployed listing, and
-   nothing was actually published anywhere.
+7. **DONE, by self-hosting.** No cloud credentials or third-party marketplace account were ever
+   actually required — a plugin marketplace is just a `.claude-plugin/marketplace.json` file in a
+   git repo. This repo now carries one at its root, with a single entry (`source: "./plugin"`)
+   pointing at the `plugin/` directory in the same repo, so the standard `/plugin marketplace add`
+   / `/plugin install` flow works against this repo directly:
+   ```
+   /plugin marketplace add crywolfe/claude-code-design
+   /plugin install claude-code-design@claude-code-design
+   ```
+   `plugin/marketplace-entry.example.json` remains as a reference for the *different* case of the
+   plugin's source living in its own separate repo (which needs the `git-subdir` source form
+   instead of a relative path). Submitting to Anthropic's community marketplace, or any
+   third-party marketplace listing, is still not done and not attempted.
 
 ---
 

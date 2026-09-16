@@ -1,6 +1,11 @@
 {
+  "_comment": "This repo self-hosts its own marketplace: the real, deployed entry is /.claude-plugin/marketplace.json at the repo root (source: \"./plugin\", the simplest form for a plugin living in a subdirectory of the same repo as its marketplace). This file is a reference example for a DIFFERENT scenario -- forking this plugin's source into its own repo and listing it from a separate marketplace -- where the git-subdir source form is required because there is no shared repo root to resolve a relative path against.",
   "name": "claude-code-design",
-  "source": "https://github.com/crywolfe/claude-code-design",
+  "source": {
+    "source": "git-subdir",
+    "url": "https://github.com/crywolfe/claude-code-design.git",
+    "path": "plugin"
+  },
   "description": "Design-grade HTML artifacts (decks, prototypes, wireframes, animated video, design systems) built through skills, commands and a hardened Bash/browser guard.",
   "version": "0.1.0"
 }
