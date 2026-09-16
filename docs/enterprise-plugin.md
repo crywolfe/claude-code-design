@@ -194,23 +194,23 @@ No other outbound call exists in the committed skills. `wget`, `nc`, `ssh`, `scp
 
 ### Against the workspace (`.claude/`)
 
-1. `bash .claude/hooks/test-guard.sh` and confirm **0 failed**. The committed suite has 287
-   cases; the pending patch under `artifacts/hardening-patch/` raises it to 389 once applied.
-   **This step is now urgent, not just outstanding**: the committed, unpatched
-   `.claude/hooks/guard-bash.sh` carries a critical bypass (found 2026-09-15 by an adversarial
-   review of the plugin build, documented as finding #10 in
-   `artifacts/hardening-patch/README.md`) that lets a smuggled command past the guard entirely
-   via a `\"` sequence — see that finding for the mechanism and proof-of-concept string.
+1. `bash .claude/hooks/test-guard.sh` and confirm **0 failed**. The suite has 389 cases
+   (up from 287), reflecting the hardening patch under `artifacts/hardening-patch/`, applied
+   to `.claude/hooks/` on 2026-09-15 (commit `dd641c0`) and confirmed passing.
+   This closed a critical bypass (found the same day by an adversarial review of the
+   plugin build, documented as finding #10 in `artifacts/hardening-patch/README.md`) that
+   let a smuggled command past the guard entirely via a `\"` sequence — see that finding for
+   the mechanism and proof-of-concept string.
 2. `git diff --no-index` the two hooks against the plugin's reference copy (a plugin must
    ship a checksum file for this).
 3. Confirm `.claude/settings.json` (or managed settings) contains the deny list, and that
    `Write`/`Edit` on `.claude/hooks/**`, `settings*.json`, `.mcp.json`, `scripts/**` is denied.
 4. Confirm `.mcp.json` pins `chrome-devtools-mcp@1.9.0` with `--isolated`.
 5. Read the findings register in `docs/architecture/security-architecture.html`: G-01 to
-   G-10 are reviewer/adversarial-review-confirmed gaps in the committed guard with a patch
-   pending (G-10 is the critical backslash/quote-tracking desync above); R-01 to R-05 are
-   accepted residual risks. A deployment should not go live before the patch is applied and
-   the self-test passes at 389.
+   G-10 are reviewer/adversarial-review-confirmed gaps, all closed by the hardening patch
+   now applied to the committed guard (G-10 is the critical backslash/quote-tracking desync
+   above); R-01 to R-05 are accepted residual risks. Confirm the self-test still passes at
+   389 before relying on this.
 
 ### Against the plugin (`plugin/`)
 
@@ -223,8 +223,8 @@ No other outbound call exists in the committed skills. `wget`, `nc`, `ssh`, `scp
    — see `plugin/README.md`'s "Known issues" section for the history. A separate, **critical**
    backslash/quote-tracking desync was found by an adversarial review after the build landed —
    see `plugin/README.md`'s "Critical bypass found by adversarial review" section — and fixed
-   here, in `artifacts/hardening-patch/guard-bash.sh`, **and needs the same fix applied to the
-   still-vulnerable `.claude/hooks/guard-bash.sh` protecting this repo's own workspace mode**.
+   there, in `plugin/hooks/guard-bash.sh`; the same fix has since been applied to
+   `.claude/hooks/guard-bash.sh` protecting this repo's own workspace mode (commit `dd641c0`).
 8. Confirm `plugin/.claude-plugin/plugin.json` is valid JSON with at least `name` set, and
    that `plugin/hooks/hooks.json` wires both guards through `"${CLAUDE_PLUGIN_ROOT}"/hooks/…`.
 9. Confirm a managed-settings deny list (`plugin/managed-settings.reference.json` or

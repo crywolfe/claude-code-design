@@ -43,7 +43,7 @@ This repo is a **Claude Code workspace** meant to be used as a **GitHub template
 
    It inventories Chrome DevTools MCP, Node, `monolith`, `gh`, `pptxgenjs` and `puppeteer`, creates the working directories, runs a smoke deck and prints the install command for anything missing. You run those commands in a separate shell; the agent never installs software.
 
-4. **Run the guard self-test** and confirm the last line reads `287 cases, 0 failed`.
+4. **Run the guard self-test** and confirm the last line reads `389 cases, 0 failed`.
 
    ```
    bash .claude/hooks/test-guard.sh
@@ -219,7 +219,7 @@ Controls an auditor will ask about, all in the repo:
 - `.claude/settings.json` carries a deny list and registers two PreToolUse hooks.
 - `.claude/hooks/guard-bash.sh` allowlists the documented form of every command per pipeline segment.
 - `.claude/hooks/guard-browser.py` keeps Chrome DevTools MCP on project files and `127.0.0.1` and refuses scripts that open connections, navigate, or touch storage.
-- `bash .claude/hooks/test-guard.sh` runs the 287-case matrix covering both guards.
+- `bash .claude/hooks/test-guard.sh` runs the 389-case matrix covering both guards.
 - Every skill's `allowed-tools` grants only the exact commands it runs.
 
 The diagrams, egress inventory and findings register are in [`docs/architecture/security-architecture.html`](./docs/architecture/security-architecture.html). The plan for shipping this as a managed plugin, with provider settings and the auditor checklist, is in [`docs/enterprise-plugin.md`](./docs/enterprise-plugin.md).
@@ -335,7 +335,7 @@ claude-code-design/
 │   ├── commands/                       # 4 atomic slash commands: done, preview, screenshot, serve
 │   ├── hooks/guard-bash.sh             # PreToolUse bash guard (per-segment allowlists)
 │   ├── hooks/guard-browser.py          # PreToolUse guard for Chrome DevTools MCP navigation / scripts
-│   ├── hooks/test-guard.sh             # 287-case self-test for both guards
+│   ├── hooks/test-guard.sh             # 389-case self-test for both guards
 │   └── settings.json                   # deny list + hook registration (hooks, settings, scripts/ are write-protected)
 ├── scripts/
 │   ├── export-pptx.mjs                 # puppeteer + pptxgenjs
@@ -400,7 +400,7 @@ Full feature-by-feature map, including the built-in `/design` command: [`docs/cl
 
 ## Status
 
-Research / personal tool, packaged as a GitHub template workspace. Single-user local. macOS-first (uses `open`, `brew`). All state lives in the repo folder and is not cloud-synced. It runs on the Claude Code CLI only; Claude Desktop is not involved. `/publish` and `/sync-design-system` need a claude.ai login and are unavailable on third-party inference providers; everything else works there. Permissions are locked down by `.claude/settings.json` and the two guard hooks described above, and `bash .claude/hooks/test-guard.sh` runs the 287-case matrix.
+Research / personal tool, packaged as a GitHub template workspace. Single-user local. macOS-first (uses `open`, `brew`). All state lives in the repo folder and is not cloud-synced. It runs on the Claude Code CLI only; Claude Desktop is not involved. `/publish` and `/sync-design-system` need a claude.ai login and are unavailable on third-party inference providers; everything else works there. Permissions are locked down by `.claude/settings.json` and the two guard hooks described above, and `bash .claude/hooks/test-guard.sh` runs the 389-case matrix.
 
 ## References
 
