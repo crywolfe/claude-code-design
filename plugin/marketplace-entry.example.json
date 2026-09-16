@@ -1,0 +1,6 @@
+{
+  "name": "claude-code-design",
+  "source": "https://github.com/crywolfe/claude-code-design",
+  "description": "Design-grade HTML artifacts (decks, prototypes, wireframes, animated video, design systems) built through skills, commands and a hardened Bash/browser guard.",
+  "version": "0.1.0"
+}

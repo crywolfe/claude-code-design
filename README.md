@@ -224,6 +224,8 @@ Controls an auditor will ask about, all in the repo:
 
 The diagrams, egress inventory and findings register are in [`docs/architecture/security-architecture.html`](./docs/architecture/security-architecture.html). The plan for shipping this as a managed plugin, with provider settings and the auditor checklist, is in [`docs/enterprise-plugin.md`](./docs/enterprise-plugin.md).
 
+A first, additive build of that plugin now exists at [`plugin/`](./plugin/README.md) — the same skills, commands, starters, scripts and guard hooks, repackaged to install into any project via `/plugin install` instead of living in that project's own `.claude/`. It does not replace or touch the workspace mode described above; the two are independent and installing one has no effect on the other. See [`plugin/README.md`](./plugin/README.md) for install steps, the managed-settings requirement (a plugin's own `settings.json` cannot carry a permission deny list), and the exact verification commands.
+
 ## Skill reference
 
 ### Creating artifacts
