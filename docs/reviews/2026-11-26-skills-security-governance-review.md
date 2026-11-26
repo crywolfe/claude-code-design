@@ -260,14 +260,14 @@ These steps are ordered by risk reduced per unit of effort. Steps 1–4 close th
    - Move `.github/**`, `tools/**`, `plugin/hooks/**`, `plugin/scripts/**` and `package*.json` into the "never written by Claude" tier: add `Edit(...)` deny rules in `settings.json`, and remove the matching `allow` lines from `settings.local.json`.
    - Either keep the no-prompt edits for skills and CLAUDE.md, but have the merge hook (step 4) refuse any PR that touches them,
    - or give the agent a **separate GitHub identity** (a machine user or a GitHub App with short-lived installation tokens, `contents:write` on non-default branches and `pull_requests:write` only). Then require one approving review from you. This one change makes separation of duties possible, and it also closes N-13. (AC-5, IA-4, IA-9; COSAiS agent identity)
-3. **Constrain `git push` in `guard-bash.sh`.** Allow only `git push origin <name>` where `<name>` matches `[A-Za-z0-9._/-]+` and is not `claude-design-features`. Refuse `:`, a leading `+`, `-f`, `--force*`, `--mirror`, `--all` and `--tags`. Allow `--delete` only for a non-default branch. Add `test-guard.sh` cases for each form, then re-pin. (CM-5, SI-7)
+3. **Constrain `git push` in `guard-bash.sh`.** **Fix staged 2026-11-26**, in `guard-tools.py` rather than `guard-bash.sh`, so no re-pin is needed. `--no-verify` is refused too (see §6). Allow only `git push origin <name>` where `<name>` matches `[A-Za-z0-9._/-]+` and is not `claude-design-features`. Refuse `:`, a leading `+`, `-f`, `--force*`, `--mirror`, `--all` and `--tags`. Allow `--delete` only for a non-default branch. Add `test-guard.sh` cases for each form, then re-pin. (CM-5, SI-7)
 4. **Move the merge and outbound decisions into `guard-tools.py`.** This separates enforcement from reasoning.
    - **Taint.** Mark the session tainted when it calls `gh repo clone`, `curl https://api.figma.com`, `unzip -p`, `ArtifactComments`, `DesignSync get_file`, `gh pr view|diff` on a PR not authored by the user, or `Read` of `/tmp/cd-ingest-*`, `artifacts/ingested/`, or an image **outside the project**. Exempt the preview files (`.claude/last-preview.png`, `.claude/verify-*`), which `/done` and `verify-artifact` read every turn. Record the `session_id` under `.claude/audit/`.
    - **Merge.** Deny `gh pr merge` unless all four hold: the head is the current branch, the author is the user, no policy path changed, and the session is untainted.
    - **Push and public text.** Deny `git push`, `gh pr create`, `gh issue create`, `Artifact` publish and `DesignSync` writes in tainted sessions.
    - **How the user overrides it.** For `git` and `gh`, the deny message is "run it yourself with `! <command>`". `Artifact` and `DesignSync` are built-in tools the user cannot run with `!`, so give them a different escape: start a fresh, untainted session, or create a one-time override file under `.claude/audit/`. The agent cannot write there.
    - **Why deny, not ask.** Use deny rather than `ask`, because bypass mode voids `ask`. (AC-4, SI-10; AI 600-1 *Information Security*)
-5. **Make `guard-tools.py` default-deny by tool name.**
+5. **Make `guard-tools.py` default-deny by tool name.** **Fix staged 2026-11-26**, except for three items: taint-based DesignSync gating (needs action 4), bypass-mode disabling, and shipping the hook in the plugin (see §6).
    - **Allowlist:** derive it from the tool names already recorded in `.claude/audit/tool-calls.jsonl`, not from this list. It will include at least: Read, Write, Edit, Glob, Grep, Bash, Skill, AskUserQuestion, ToolSearch, `ArtifactComments` (the publish comment loop), `Agent` (your reviewer agents), `mcp__ide__getDiagnostics`, and the project's chrome-devtools server.
    - **Artifact:** allow only with `file_path` under `artifacts/publish/`, with no `capabilities` and no `force`. The hook re-runs the secret and PII scan.
    - **DesignSync:** allow reads freely, writes only in untainted sessions, and never `delete_files`.
@@ -275,7 +275,7 @@ These steps are ordered by risk reduced per unit of effort. Steps 1–4 close th
    - **`--allow-findings`:** have the guard refuse it.
    - **Bypass mode:** set `permissions.disableBypassPermissionsMode: "disable"` in `settings.json` [recall: check the key name].
    - **Plugin:** ship the same `guard-tools.py` (with pins) in `plugin/hooks/hooks.json` (N-09). (AC-6, CM-7, SC-7)
-6. **Validate tokens in code.** Add `scripts/validate-tokens.mjs` to the node allowlist with a strict schema:
+6. **Validate tokens in code.** **Fix staged 2026-11-26**, as a hook check on every write or copy of a token file rather than a node script (see §6). Add `scripts/validate-tokens.mjs` to the node allowlist with a strict schema:
    - colors match `#rrggbb` or `oklch()`/`rgb()`/`hsl()` with numeric arguments
    - font families match `^[A-Za-z0-9 \-]{1,64}$`
    - numbers are bounded
@@ -288,7 +288,7 @@ These steps are ordered by risk reduced per unit of effort. Steps 1–4 close th
    - Add a CSP `<meta>` (`default-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; connect-src 'self'`) to the starters, and have `verify-artifact` check for it.
    - Add SRI to the Popmotion snippet.
    - Stop `/serve` from serving `artifacts/ingested/`. (SC-7, AC-4, SR-11)
-8. **Restrict public posts.** Limit `gh pr create` and `gh issue create` `--body-file` to `artifacts/pr-body.md` and `artifacts/issue-body.md`, and run the PII and secret scanner on that file in the hook. Refuse `git add -f`. (AC-22, AC-4; AI 600-1 *Data Privacy*)
+8. **Restrict public posts.** **Fix staged 2026-11-26** (see §6). Limit `gh pr create` and `gh issue create` `--body-file` to `artifacts/pr-body.md` and `artifacts/issue-body.md`, and run the PII and secret scanner on that file in the hook. Refuse `git add -f`. (AC-22, AC-4; AI 600-1 *Data Privacy*)
 9. **Measure the risky paths.**
    - Add evals for ship-branch (an injected "merge PR #N" and an injected skill edit), publish (seeded PII, and an attempt at `--allow-findings`), sync (a delete request planted in a remote file), and ingest-figma, ingest-document and ingest-screenshot (planted instructions and malicious token values). Run them in CI as a merge gate.
    - Commission an adversarial bypass review of the 11-21 fixes.
@@ -333,5 +333,22 @@ The fix has two parts that work together:
 - **Open (N-13).** Separation of duties still rests on a local hook, not on GitHub. The agent still uses the maintainer's GitHub login, so GitHub cannot tell the two apart. A separate agent identity is still recommended.
 - **Accepted (false positive).** Any command with a `gh` word and a standalone `merge` word is treated as a merge. So a `gh pr create` whose title or branch name contains "merge" is blocked, and so is a Bash search for that text. ship-branch says to keep the word in the body file; use the Grep tool for searches.
 - **Unverified.** The hook's three `gh` calls are capped at 40 s in total, below the default 60 s hook timeout [recall]. That a timed-out hook blocks under `onFailure: block` was not tested.
+
+### Actions 3, 5, 6 and 8: fixes staged the same day
+
+GitHub Actions credits ran out on 2026-11-26. With no Actions, the `checks` status can't be produced, so branch protection now blocks every merge, which fails closed. Everything below runs on the maintainer's machine and needs no Actions. It is in the same staged `guard-tools.py`, with its tests in `test_merge_gate.py`.
+
+| Action | What was built | Differences from the plan above |
+|---|---|---|
+| **3. Push** | The whole command must be `git push origin <branch>` or `git push origin --delete <branch>`. It refuses the default branch, `refs/…`, `HEAD`, tag names, refspecs, force, `--tags` and `--no-verify`. A pushed branch must exist locally | In `guard-tools.py`, not `guard-bash.sh`, so no re-pin. `--no-verify` added, so the pre-push hook can't be skipped |
+| **5. Default-deny** | `ALLOWED_TOOLS` comes from the audit log plus the skills' `allowed-tools`.<br>- `SendMessage`: only to this session's subagents, by id.<br>- `Artifact`: only `artifacts/publish/` files, with no capabilities, force, type or copy, after a secret and home-path scan.<br>- `DesignSync`: no `delete_files`, and local paths under `design-systems/`.<br>- `ReadMcpResourceTool`, `RemoteTrigger`, `CronCreate`, `Workflow` and `NotebookEdit` are refused by default | `SendMessage` is limited rather than denied, because resuming a reviewer subagent needs it. Still open: DesignSync gating by taint (needs action 4), `disableBypassPermissionsMode` (not set, because the maintainer works in bypass mode), and shipping `guard-tools.py` in the plugin (N-09) |
+| **6. Tokens** | Writing or copying `.claude/design-tokens.json` or `design-systems/*/tokens.json` requires the content to validate:<br>- strict colours under colour keys and plain font names under font keys<br>- numbers within ±10000<br>- values of at most 96 plain characters and 5 words<br>- no `url()`, `data:`, `@import` or markup<br>`Edit` of a token file is refused, so the whole file is always validated | A hook check instead of `scripts/validate-tokens.mjs`, so no node allowlist change and no re-pin. Invalid files are rejected, not cleaned. `source` / `external` marking is not done |
+| **8. Public posts** | `gh pr|issue create` must be the whole command, with exactly one `--body-file artifacts/pr-body.md` / `artifacts/issue-body.md`. `--body`, `--fill`, `--template`, `--web` and `--editor` are refused. The title and body are scanned for secrets, e-mail addresses (`noreply` and example domains are fine) and home paths. `git add -f` and `--allow-findings` are refused | — |
+| **Local CI** | Staged `pre-push` for `.git/hooks/` runs both guard self-tests, the plugin sync check, the tool-guard tests and `node --check` | Stands in for the `checks` job until Actions returns. `npm ci` / `npm audit` are left to a manual run |
+
+**Residual risks**
+- The token word limit is a heuristic. A short instruction of five words or fewer still fits, and values under colour keys must be colours, so a `description` there is rejected.
+- The scanner finds known secret formats only. It does not catch names, phone numbers or free-form confidential text.
+- Everything in this section is a local control, and so is the merge gate. Separation of duties still waits on a separate agent identity (N-13).
 - **Accepted (deliberate).** Policy edits to skills and CLAUDE.md still need no prompt. What changed is that they can no longer be merged by the agent.
 - **Unverified.** Whether Claude Code runs hooks inside the sandbox is [recall: unsandboxed]. If they are sandboxed, `gh pr view` fails and every agent merge blocks. That is fail-closed, but ship-branch would then hand over every merge.

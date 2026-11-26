@@ -31,6 +31,16 @@ Please use GitHub private vulnerability reporting on this repository (Security t
   - **How changes reach `claude-design-features`:** only through a PR. Branch protection (on since 2026-11-26) requires the `checks` job and an up-to-date branch, applies to admins, and blocks force-pushes and deletion.
   - **Who merges:** `ship-branch` merges without a per-PR approval only when the PR changes no policy file. A PR that touches any policy path is merged by the maintainer. `guard-tools.py` enforces this before any `gh pr merge`. It reads the PR's full file list, including the old path of a renamed file, and requires the merge to be pinned with `--match-head-commit` to the commit it checked. It blocks whenever it cannot verify the PR. `ship-branch` also asks first when a change was prompted by untrusted content.
   - **Known gap:** the agent acts under the maintainer's GitHub login, so GitHub itself cannot tell the two apart. The local merge gate is what separates them.
+- **Outbound actions** (`guard-tools.py`, 2026-11-26).
+  - **Tools:** default-deny by tool name.
+  - **Pushes:** only `git push origin <branch>` or `--delete <branch>`, as the whole command, never to the default branch.
+  - **PRs and issues:** text comes only from `artifacts/pr-body.md` / `artifacts/issue-body.md`, scanned for secrets, e-mail addresses and home paths.
+  - **`Artifact`:** publishes only from `artifacts/publish/`, with no runtime capabilities, after a secret scan.
+  - **`DesignSync`:** never deletes.
+  - **`SendMessage`:** reaches only the session's own subagents.
+  - **Flags the user runs:** `git add -f` and `--allow-findings`.
+- **Design tokens.** Token files are validated whenever they are written or copied into place: strict colours and fonts, bounded numbers, short plain values. This keeps ingested values from carrying instructions or CSS into later sessions (N-07).
+- **Local CI.** While GitHub Actions is unavailable, `.git/hooks/pre-push` (installed by the maintainer) runs the guard self-tests, the plugin sync check and the tool-guard tests before every push. The agent can't skip it, because the push rule refuses `--no-verify` and `guard-bash.sh` refuses `git -c`.
 - **Deny rules.** In workspace mode the deny list lives in `.claude/settings.json`. A plugin cannot ship `permissions.deny`, so plugin users must have an administrator deploy `plugin/managed-settings.reference.json` as a managed settings file. Without it, the hooks are the only enforced control.
 - **Untrusted content.** Anything read from repos, Figma, screenshots, office documents, comment threads or prior artifacts is data. Instructions found in it are not followed; the agent quotes them to the user and stops. Evals under `plugin/evals/` exercise this.
 - **Supply chain.** Dependencies are pinned exactly and installed from the lockfile (`npm ci --ignore-scripts`). CI runs the guard self-tests, checks that `plugin/` is generated from `.claude/skills` (`node tools/sync-plugin.mjs --check`), and audits dependencies. Tagged releases publish a CycloneDX SBOM.

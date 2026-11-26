@@ -115,6 +115,19 @@ and `upload_file` is refused.
   shell commands are never seen by `guard-bash.sh`.
   Policy changes are merged by the maintainer in their own shell. If the merge gate blocks, hand the user the command;
   don't retry it.
+- **Tool allowlist.** Built-in tools not in `ALLOWED_TOOLS` are refused (default-deny). `SendMessage` may only
+  continue a subagent this session started, by its id. `Artifact` publishes only files under `artifacts/publish/`,
+  with no `capabilities`, `force` or `type_url`, after a secret scan. `DesignSync` never deletes, and its local paths
+  stay under `design-systems/`.
+- **Push.** Only `git push origin <branch>` and `git push origin --delete <branch>`, as the whole command, for a
+  branch other than `claude-design-features`. No refspecs, force, tags or `--no-verify`.
+- **Public posts.** `gh pr create` and `gh issue create` are the whole command and take their text only from
+  `--body-file artifacts/pr-body.md` or `artifacts/issue-body.md`. The title and body are scanned for secrets, e-mail
+  addresses and home-directory paths. `git add -f` and `--allow-findings` are refused; the user runs those.
+- **Design tokens.** `.claude/design-tokens.json` and `design-systems/*/tokens.json` are written only with `Write`
+  (whole file) or `cp`/`mv` from a file that passes validation: strict colours and font names, bounded numbers,
+  short plain values. Prose, markup and CSS outside colours are refused, so an ingested token file can't carry
+  instructions into later sessions.
 - **Audit.** One JSON line per tool call in `.claude/audit/` (time, session, tool, SHA-256 of the input,
   decision; never the input itself). Claude cannot write there.
 
