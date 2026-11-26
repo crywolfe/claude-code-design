@@ -23,7 +23,7 @@ const DST_SKILLS = path.join(ROOT, 'plugin', 'skills');
 const OVERRIDES = path.join(ROOT, 'tools', 'plugin-overrides', 'skills');
 
 // Skills that exist only in the repo-local set; never copied to the plugin.
-const REPO_ONLY = new Set(['ship-branch']);
+const REPO_ONLY = new Set(['ship-branch', 'governance-review']);
 // Skills that exist only in the plugin; never touched or deleted by this tool.
 const PLUGIN_ONLY = new Set(['generate-design-md']);
 // Skills whose plugin copy is hand-written beyond the path transform. Their SKILL.md is taken
