@@ -46,7 +46,7 @@ Exit codes and what to do:
 | Exit | Meaning | Action |
 |---|---|---|
 | 0 | ready; JSON on stdout has `out`, `sha256`, `inlined`, `warnings` | continue; relay any `warnings` (remote origins that will not load, unresolved local references) |
-| 3 | possible secrets / PII; findings printed as `[type] line N: redacted excerpt` | **Stop.** Show the findings. Do not publish. Ask the user whether each is acceptable; only if they explicitly accept, re-run with `--allow-findings` |
+| 3 | possible secrets / PII; findings printed as `[type] line N: redacted excerpt` | **Stop.** Show the findings. Do not publish. Ask the user whether each is acceptable. If they accept, they re-run it themselves as `! node scripts/prepare-publish.mjs <same args> --allow-findings` (`guard-tools.py` refuses the flag from the agent), then you continue with its output |
 | 4 | dev-only content survived | **Stop.** Show the output; do not publish |
 | 1 / 2 | bad path or I/O error | **Stop.** Show the message |
 

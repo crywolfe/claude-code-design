@@ -53,7 +53,7 @@ design-systems/<name>/sync/
 0. Classification. The project is visible to everyone in the org who has access to it. Before finalizing, ask with `AskUserQuestion`: "What is in this bundle?" with options "Brand assets cleared for the org", "Contains confidential or unreleased material" and "Don't push". Push only on the first option; on the second, stop and suggest removing that material from `design-systems/<name>/` first. Note the time of the answer as `approved_at`.
 1. After the user approves the table: `DesignSync({method: "finalize_plan", projectId, writes: [<exact paths or globs>], deletes: [<only what the user named>], localDir: "design-systems/<name>/sync"})` → `planId`.
 2. `DesignSync({method: "write_files", projectId, planId, files: [{path, localPath}]})` — `localPath` for everything (max 256 per call; batch if larger).
-3. Deletes only if the plan had them: `DesignSync({method: "delete_files", …})`.
+3. Deletes: `guard-tools.py` refuses `DesignSync` `delete_files`. If the plan named deletes, list those paths in the report and ask the user to delete them in Claude Design themselves.
 4. `register_assets` is legacy — the `@dsCard` first-line marker is what the Design System pane indexes. Skip it unless a preview has no marker.
 
 ## Phase 5 — Record + report
